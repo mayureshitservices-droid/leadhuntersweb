@@ -12,7 +12,7 @@ export class AuthController {
       const { email, password } = req.body;
       const user = await prisma.user.findUnique({ where: { email } });
 
-      if (!user) {
+      if (!user || !user.password_hash) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 

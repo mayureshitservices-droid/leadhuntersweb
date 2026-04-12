@@ -18,7 +18,7 @@ export class WebController {
       const { email, password } = req.body;
       const user = await prisma.user.findUnique({ where: { email } });
 
-      if (!user) {
+      if (!user || !user.password_hash) {
         return res.render('login', { error: 'Invalid credentials' });
       }
 
