@@ -1,0 +1,150 @@
+<%- include('partials/header') %>
+
+<div class="animate-fade-in-up">
+    <!-- Header Section -->
+    <div class="mb-8 flex md:flex-row flex-col justify-between md:items-end">
+      <div>
+        <h2 class="text-3xl font-bold tracking-tight text-gray-900 border-b-4 border-primary inline-block pb-1">Owner Dashboard</h2>
+        <p class="text-sm font-medium text-gray-500 mt-2">Welcome back, <%= user.name %></p>
+      </div>
+    </div>
+  <div class="px-4 py-4 sm:px-0">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <!-- Stat Cards -->
+      <div class="bg-white overflow-hidden shadow rounded-2xl p-5 border border-gray-100 flex items-center">
+        <div class="p-3 rounded-xl bg-blue-50 text-blue-500 mr-4">
+          <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-500 truncate">Total Leads</p>
+          <p class="mt-1 text-3xl font-semibold text-gray-900"><%= stats.total %></p>
+        </div>
+      </div>
+
+      <div class="bg-white overflow-hidden shadow rounded-2xl p-5 border border-gray-100 flex items-center">
+        <div class="p-3 rounded-xl bg-amber-50 text-amber-500 mr-4">
+          <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-500 truncate">Pending Calls</p>
+          <p class="mt-1 text-3xl font-semibold text-gray-900"><%= stats.pending %></p>
+        </div>
+      </div>
+
+      <div class="bg-white overflow-hidden shadow rounded-2xl p-5 border border-gray-100 flex items-center">
+        <div class="p-3 rounded-xl bg-green-50 text-emerald-500 mr-4">
+          <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-500 truncate">Answered</p>
+          <p class="mt-1 text-3xl font-semibold text-gray-900" id="stat-answered"><%= stats.answered %></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="bg-white shadow rounded-2xl overflow-hidden border border-gray-100 mb-8 p-6">
+       <h3 class="text-lg leading-6 font-bold text-gray-900 mb-4">Upload New Leads (CSV)</h3>
+       <form action="/owner/upload-leads" method="POST" enctype="multipart/form-data" class="flex items-center space-x-4">
+         <div class="flex-1">
+           <label class="block sr-only">Choose file</label>
+           <input type="file" name="leads_file" accept=".csv" required class="block w-full text-sm text-gray-500
+             file:mr-4 file:py-2 file:px-4
+             file:rounded-full file:border-0
+             file:text-sm file:font-semibold
+             file:bg-container file:text-primary
+             hover:file:bg-red-100"
+           />
+         </div>
+         <button type="submit" class="btn-primary flex items-center">
+           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
+             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+           </svg>
+           Upload
+         </button>
+       </form>
+       <% if (locals.uploadMsg) { %>
+         <p class="mt-3 text-sm text-green-600 font-medium"><%= uploadMsg %></p>
+       <% } %>
+    </div>
+
+    <!-- Live Activity Feed -->
+    <div class="bg-white shadow rounded-2xl overflow-hidden border border-gray-100">
+      <div class="px-6 py-5 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
+        <h3 class="text-lg leading-6 font-bold text-gray-900">Live Call Activity</h3>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <span class="w-2 h-2 mr-1.5 bg-green-500 rounded-full animate-pulse"></span>
+          Live
+        </span>
+      </div>
+       <div class="p-6">
+           <ul id="live-calls" class="divide-y divide-gray-200">
+             <li class="py-4 text-center text-gray-500 text-sm italic" id="empty-state">Waiting for fresh call logs via Socket...</li>
+           </ul>
+       </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  socket.emit('join_dashboard', '<%= user.id %>');
+
+  socket.on('new_call_log', (data) => {
+    const list = document.getElementById('live-calls');
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) emptyState.remove();
+
+    // Increment Answered Stat if answered
+    if(data.status === 'ANSWERED') {
+      const ansEl = document.getElementById('stat-answered');
+      if(ansEl) ansEl.innerText = parseInt(ansEl.innerText) + 1;
+    }
+
+    const li = document.createElement('li');
+    li.className = "py-4 flex justify-between items-center animate-fade-in-up";
+    
+    let badgeClass = data.status === 'ANSWERED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+    let audioMarkup = data.recording_url ? `<audio controls src="${data.recording_url}" class="h-8 mt-2 w-full max-w-xs outline-none"></audio>` : '';
+
+    li.innerHTML = `
+      <div class="flex-1">
+        <div class="flex items-center">
+            <span class="text-sm font-bold text-gray-900 mr-2">${data.lead_name}</span>
+            <span class="text-xs text-gray-500">(${data.lead_phone})</span>
+        </div>
+        <div class="text-xs text-gray-500 mt-1">Called by <span class="font-medium">${data.telecaller_name}</span> • Duration: ${data.duration}s</div>
+        ${audioMarkup}
+      </div>
+      <div>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${badgeClass}">
+          ${data.status}
+        </span>
+      </div>
+    `;
+    
+    list.prepend(li);
+    
+    // limit to 10
+    if (list.children.length > 10) {
+      list.removeChild(list.lastChild);
+    }
+  });
+</script>
+
+<style>
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+</style>
+
+<%- include('partials/footer') %>

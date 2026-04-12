@@ -1,0 +1,64 @@
+<%- include('partials/header') %>
+
+<div class="space-y-8 animate-fade-in-up">
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Super Admin Overview</h2>
+      <p class="text-sm text-gray-500 mt-1">Manage platform occupants and device assignments.</p>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-gray-900">Business Owners</h3>
+        <button class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors" onclick="alert('Feature coming soon')">+ New Owner</button>
+      </div>
+      <ul class="divide-y divide-gray-100">
+        <% if(businessOwners.length === 0) { %>
+          <li class="py-4 text-gray-500 text-sm">No business owners registered yet.</li>
+        <% } %>
+        <% businessOwners.forEach(bo => { %>
+          <li class="py-3 flex justify-between items-center">
+            <div>
+              <p class="font-medium text-gray-900"><%= bo.name %></p>
+              <p class="text-xs text-gray-500"><%= bo.email %></p>
+            </div>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+       <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-gray-900">Telecallers</h3>
+        <button class="bg-container text-primary px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors" onclick="alert('Feature coming soon')">+ New Telecaller</button>
+      </div>
+      <ul class="divide-y divide-gray-100">
+        <% if(telecallers.length === 0) { %>
+          <li class="py-4 text-gray-500 text-sm">No telecallers registered yet.</li>
+        <% } %>
+        <% telecallers.forEach(tc => { %>
+          <li class="py-3 flex justify-between items-center">
+            <div>
+              <p class="font-medium text-gray-900"><%= tc.name %></p>
+              <p class="text-xs text-gray-500 font-mono mt-0.5">Device ID: <%= tc.device_id || 'N/A' %></p>
+            </div>
+            <button class="text-sm text-primary font-medium hover:text-red-800 transition-colors" onclick="alert('Assign to BO feature')">Assign</button>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+</style>
+
+<%- include('partials/footer') %>
