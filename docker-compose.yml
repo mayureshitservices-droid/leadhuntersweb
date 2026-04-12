@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  web:
+    build: .
+    container_name: leadhunters_web
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app-network
+
   db:
     image: postgres:15
     container_name: leadhunters_db
@@ -9,17 +23,21 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: leadhunters
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
 
   redis:
     image: redis:7
     container_name: leadhunters_redis
     restart: always
-    ports:
-      - "6379:6379"
+    networks:
+      - app-network
 
 volumes:
   pgdata:
+
+networks:
+  app-network:
+    driver: bridge
