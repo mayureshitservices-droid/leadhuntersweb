@@ -22,4 +22,8 @@ router.post('/admin/delete-customer', webController.deleteCustomer);
 router.get('/owner', webController.getOwnerDashboard);
 router.post('/owner/upload-leads', upload.single('leads_file'), webController.postUploadLeads);
 
+// Assignments
+router.get('/admin/telecaller-assignments/:id', webController.getTelecallerAssignments);
+router.post('/admin/update-telecaller-assignments', webController.updateTelecallerAssignments);
+
 export default router;

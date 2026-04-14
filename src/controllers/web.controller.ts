@@ -284,4 +284,55 @@ export class WebController {
     }
   };
 
+  getTelecallerAssignments = async (req: Request, res: Response) => {
+    try {
+      if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      const { id } = req.params;
+      const assignments = await prisma.telecallerAssignment.findMany({
+        where: { telecaller_id: id },
+        select: { business_owner_id: true }
+      });
+
+      res.json({ ids: assignments.map(a => a.business_owner_id) });
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+      res.status(500).json({ error: 'Internal server error.' });
+    }
+  };
+
+  updateTelecallerAssignments = async (req: Request, res: Response) => {
+    try {
+      if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      const { telecallerId, businessOwnerIds } = req.body;
+
+      if (!telecallerId || !Array.isArray(businessOwnerIds)) {
+        return res.status(400).json({ error: 'Telecaller ID and Business Owner IDs array are required.' });
+      }
+
+      // Sync assignments: Delete old and create new in a transaction
+      await prisma.$transaction([
+        prisma.telecallerAssignment.deleteMany({
+          where: { telecaller_id: telecallerId }
+        }),
+        prisma.telecallerAssignment.createMany({
+          data: businessOwnerIds.map(boId => ({
+            telecaller_id: telecallerId,
+            business_owner_id: boId
+          }))
+        })
+      ]);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error updating assignments:', error);
+      res.status(500).json({ error: 'Internal server error.' });
+    }
+  };
+
 }
