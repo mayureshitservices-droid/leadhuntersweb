@@ -4,14 +4,13 @@
   <div class="flex items-center justify-between">
     <div>
       <h2 class="text-2xl font-bold text-gray-900 tracking-tight">Super Admin Overview</h2>
-      <p class="text-sm text-gray-500 mt-1">Manage platform occupants and device assignments.</p>
     </div>
   </div>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-gray-900">Business Owners</h3>
-        <button class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors" onclick="alert('Feature coming soon')">+ New Owner</button>
+        <h3 class="text-lg font-bold text-gray-900">Customers</h3>
+        <button class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors" onclick="alert('Feature coming soon')">+ New Customer</button>
       </div>
       <ul class="divide-y divide-gray-100">
         <% if(businessOwners.length === 0) { %>
@@ -38,18 +37,95 @@
           <li class="py-4 text-gray-500 text-sm">No telecallers registered yet.</li>
         <% } %>
         <% telecallers.forEach(tc => { %>
-          <li class="py-3 flex justify-between items-center">
-            <div>
-              <p class="font-medium text-gray-900"><%= tc.name %></p>
-              <p class="text-xs text-gray-500 font-mono mt-0.5">Device ID: <%= tc.device_id || 'N/A' %></p>
+          <li class="py-4 flex justify-between items-start" x-data="{ 
+            editing: <%= !tc.device_alias %>, 
+            alias: '<%= tc.device_alias || '' %>', 
+            tempAlias: '<%= tc.device_alias || '' %>',
+            loading: false 
+          }">
+            <div class="flex-1">
+              <!-- Alias Section -->
+              <div class="flex items-center space-x-2 min-h-[24px]">
+                <template x-if="!editing">
+                  <div class="flex items-center space-x-3 group">
+                    <span class="font-bold text-gray-900 text-base" x-text="alias"></span>
+                    <button @click="editing = true; tempAlias = alias" class="text-gray-400 hover:text-red-600 transition-colors ml-2" title="Edit Name">
+                      <svg xmlns="http://www.w3.org/2000/svg" style="width: 16px; height: 16px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  </div>
+                </template>
+                
+                <template x-if="editing">
+                  <div class="flex items-center space-x-4 animate-fade-in">
+                    <input 
+                      type="text" 
+                      x-model="tempAlias" 
+                      placeholder="Enter Name" 
+                      class="border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-50 focus:border-red-400 w-48 transition-all"
+                      @keyup.enter="saveAlias('<%= tc.id %>', tempAlias, $data)"
+                    >
+                    <button 
+                      @click="saveAlias('<%= tc.id %>', tempAlias, $data)" 
+                      :disabled="loading"
+                      class="text-white text-xs px-4 py-1.5 rounded-lg transition-colors flex-shrink-0"
+                      style="background-color: #E53935; min-width: 70px; display: flex; align-items: center; justify-content: center; margin-left: 8px;"
+                    >
+                      <span x-show="!loading">Save</span>
+                      <span x-show="loading" class="flex items-center">
+                        <svg class="animate-spin h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        ...
+                      </span>
+                    </button>
+                    <button x-show="alias" @click="editing = false" class="text-xs text-gray-400 hover:text-red-600 px-2 lg:ml-2">Cancel</button>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Model & ID info -->
+              <div class="mt-1">
+                <p class="text-xs text-gray-500 flex items-center">
+                   <span class="font-medium mr-1">Model:</span> <%= tc.name %>
+                </p>
+                <p class="text-[10px] text-gray-400 font-mono mt-0.5">ID: <%= tc.device_id || 'N/A' %></p>
+              </div>
             </div>
-            <button class="text-sm text-primary font-medium hover:text-red-800 transition-colors" onclick="alert('Assign to BO feature')">Assign</button>
+            
+            <div class="flex flex-col items-end justify-center">
+                <button class="text-sm text-primary font-medium hover:text-red-800 transition-colors" onclick="alert('Assign to BO feature')">Assign</button>
+            </div>
           </li>
         <% }) %>
       </ul>
     </div>
   </div>
 </div>
+
+<script>
+async function saveAlias(telecallerId, deviceAlias, data) {
+    data.loading = true;
+    try {
+        const response = await fetch('/admin/update-device-alias', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telecallerId, deviceAlias })
+        });
+        
+        if (response.ok) {
+            data.alias = deviceAlias;
+            data.editing = false;
+        } else {
+            alert('Failed to update alias');
+        }
+    } catch (error) {
+        console.error(error);
+        alert('An error occurred');
+    } finally {
+        data.loading = false;
+    }
+}
+</script>
 
 <style>
 @keyframes fadeInUp {
@@ -58,6 +134,13 @@
 }
 .animate-fade-in-up {
   animation: fadeInUp 0.4s ease-out forwards;
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>
 
