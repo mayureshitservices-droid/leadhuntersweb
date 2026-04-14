@@ -173,4 +173,117 @@ export class WebController {
             res.status(500).json({ error: 'Internal server error.' });
         }
     };
+    updateCustomer = async (req, res) => {
+        try {
+            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
+                return res.status(403).json({ error: 'Unauthorized' });
+            }
+            const { id, name, email, phone, payment_terms } = req.body;
+            if (!id || !name || !email) {
+                return res.status(400).json({ error: 'ID, Name, and Email are required.' });
+            }
+            await prisma.user.update({
+                where: { id },
+                data: {
+                    name,
+                    email,
+                    phone,
+                    payment_terms: parseInt(payment_terms, 10) || null
+                }
+            });
+            res.json({ success: true });
+        }
+        catch (error) {
+            console.error('Error updating customer:', error);
+            if (error.code === 'P2002') {
+                return res.status(400).json({ error: 'Email already exists.' });
+            }
+            res.status(500).json({ error: 'Internal server error.' });
+        }
+    };
+    updateCustomerStatus = async (req, res) => {
+        try {
+            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
+                return res.status(403).json({ error: 'Unauthorized' });
+            }
+            const { id, status } = req.body;
+            if (!id || !status) {
+                return res.status(400).json({ error: 'ID and Status are required.' });
+            }
+            await prisma.user.update({
+                where: { id },
+                data: { status }
+            });
+            res.json({ success: true });
+        }
+        catch (error) {
+            console.error('Error updating customer status:', error);
+            res.status(500).json({ error: 'Internal server error.' });
+        }
+    };
+    deleteCustomer = async (req, res) => {
+        try {
+            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
+                return res.status(403).json({ error: 'Unauthorized' });
+            }
+            const { id } = req.body;
+            if (!id) {
+                return res.status(400).json({ error: 'Customer ID is required.' });
+            }
+            await prisma.user.delete({
+                where: { id }
+            });
+            res.json({ success: true });
+        }
+        catch (error) {
+            console.error('Error deleting customer:', error);
+            res.status(500).json({ error: 'Internal server error.' });
+        }
+    };
+    getTelecallerAssignments = async (req, res) => {
+        try {
+            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
+                return res.status(403).json({ error: 'Unauthorized' });
+            }
+            const id = req.params.id;
+            const assignments = await prisma.telecallerAssignment.findMany({
+                where: { telecaller_id: id },
+                select: { business_owner_id: true }
+            });
+            res.json({ ids: assignments.map(a => a.business_owner_id) });
+        }
+        catch (error) {
+            console.error('Error fetching assignments:', error);
+            res.status(500).json({ error: 'Internal server error.' });
+        }
+    };
+    updateTelecallerAssignments = async (req, res) => {
+        try {
+            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
+                return res.status(403).json({ error: 'Unauthorized' });
+            }
+            const telecallerId = req.body.telecallerId;
+            const businessOwnerIds = req.body.businessOwnerIds;
+            if (!telecallerId || !Array.isArray(businessOwnerIds)) {
+                return res.status(400).json({ error: 'Telecaller ID and Business Owner IDs array are required.' });
+            }
+            // Sync assignments: Delete old and create new in a transaction
+            await prisma.$transaction([
+                prisma.telecallerAssignment.deleteMany({
+                    where: { telecaller_id: telecallerId }
+                }),
+                prisma.telecallerAssignment.createMany({
+                    data: businessOwnerIds.map(boId => ({
+                        telecaller_id: telecallerId,
+                        business_owner_id: boId
+                    }))
+                })
+            ]);
+            res.json({ success: true });
+        }
+        catch (error) {
+            console.error('Error updating assignments:', error);
+            res.status(500).json({ error: 'Internal server error.' });
+        }
+    };
 }

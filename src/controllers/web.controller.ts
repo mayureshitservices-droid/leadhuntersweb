@@ -290,7 +290,7 @@ export class WebController {
         return res.status(403).json({ error: 'Unauthorized' });
       }
 
-      const { id } = req.params;
+      const id = req.params.id as string;
       const assignments = await prisma.telecallerAssignment.findMany({
         where: { telecaller_id: id },
         select: { business_owner_id: true }
@@ -309,7 +309,8 @@ export class WebController {
         return res.status(403).json({ error: 'Unauthorized' });
       }
 
-      const { telecallerId, businessOwnerIds } = req.body;
+      const telecallerId = req.body.telecallerId as string;
+      const businessOwnerIds = req.body.businessOwnerIds as string[];
 
       if (!telecallerId || !Array.isArray(businessOwnerIds)) {
         return res.status(400).json({ error: 'Telecaller ID and Business Owner IDs array are required.' });
