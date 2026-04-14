@@ -15,6 +15,10 @@ router.get('/logout', webController.logout);
 router.get('/', webController.dashboardRedirect);
 router.get('/admin', webController.getSuperAdminDashboard);
 router.post('/admin/update-device-alias', webController.updateDeviceAlias);
+router.post('/admin/create-customer', webController.createCustomer);
+router.post('/admin/update-customer', webController.updateCustomer);
+router.post('/admin/update-customer-status', webController.updateCustomerStatus);
+router.post('/admin/delete-customer', webController.deleteCustomer);
 router.get('/owner', webController.getOwnerDashboard);
 router.post('/owner/upload-leads', upload.single('leads_file'), webController.postUploadLeads);
 

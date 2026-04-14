@@ -28,6 +28,9 @@ model User {
   password_hash String?
   role          Role
   device_alias  String?
+  phone         String?
+  payment_terms Int?
+  status        String   @default("Active")
   created_at    DateTime @default(now())
 
   // Relations

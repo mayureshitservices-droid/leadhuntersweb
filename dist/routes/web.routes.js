@@ -11,6 +11,7 @@ router.get('/logout', webController.logout);
 router.get('/', webController.dashboardRedirect);
 router.get('/admin', webController.getSuperAdminDashboard);
 router.post('/admin/update-device-alias', webController.updateDeviceAlias);
+router.post('/admin/create-customer', webController.createCustomer);
 router.get('/owner', webController.getOwnerDashboard);
 router.post('/owner/upload-leads', upload.single('leads_file'), webController.postUploadLeads);
 export default router;

@@ -142,4 +142,35 @@ export class WebController {
             res.status(500).json({ error: 'Internal server error' });
         }
     };
+    createCustomer = async (req, res) => {
+        try {
+            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
+                return res.status(403).json({ error: 'Unauthorized' });
+            }
+            const { name, email, password, phone, payment_terms, status } = req.body;
+            if (!name || !email || !password) {
+                return res.status(400).json({ error: 'Name, Email, and Password are required.' });
+            }
+            const password_hash = await bcrypt.hash(password, 10);
+            const customer = await prisma.user.create({
+                data: {
+                    name,
+                    email,
+                    password_hash,
+                    phone,
+                    payment_terms: parseInt(payment_terms, 10) || null,
+                    status: status || 'Active',
+                    role: 'BUSINESS_OWNER'
+                }
+            });
+            res.status(201).json({ success: true, customer: { id: customer.id, name: customer.name } });
+        }
+        catch (error) {
+            console.error('Error creating customer:', error);
+            if (error.code === 'P2002') {
+                return res.status(400).json({ error: 'Email already exists.' });
+            }
+            res.status(500).json({ error: 'Internal server error.' });
+        }
+    };
 }

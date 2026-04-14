@@ -8,7 +8,19 @@
   <link href="/css/tailwind.css" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-bg-light font-sans text-gray-800 antialiased min-h-screen flex" x-data="{ sidebarOpen: false }">
+<body class="bg-bg-light font-sans text-gray-800 antialiased min-h-screen flex" 
+  x-data="{ 
+    sidebarOpen: false, 
+    activeTab: new URLSearchParams(window.location.search).get('tab') || 'customers' 
+  }"
+  x-init="$watch('activeTab', value => {
+    if (window.location.pathname === '/admin') {
+      const url = new URL(window.location);
+      url.searchParams.set('tab', value);
+      window.history.replaceState({}, '', url);
+    }
+  })"
+>
 
   <% if (locals.user) { %>
   <!-- Mobile Sidebar Overlay -->
@@ -28,20 +40,38 @@
       <span class="text-2xl font-bold text-gray-900 tracking-tight">LeadHunters</span>
     </div>
 
-    <nav class="flex-1 px-4 py-6 space-y-2">
-      <a href="/" class="flex items-center px-4 py-3 text-gray-700 bg-gray-50 rounded-xl hover:bg-container hover:text-primary transition-all duration-200 group">
+    <nav class="flex-1 px-4 py-6 space-y-2 relative">
+      <a href="/" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group"
+         :class="window.location.pathname === '/' ? 'bg-container text-primary' : 'text-gray-600 hover:bg-container hover:text-primary'">
         <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
         </svg>
-        <span class="font-medium">Dashboard</span>
+        <span class="font-medium">Dashboard Overview</span>
       </a>
       
       <% if (user.role === 'SUPER_ADMIN') { %>
-      <a href="/admin" class="flex items-center px-4 py-3 text-gray-600 hover:bg-container hover:text-primary rounded-xl transition-all duration-200 group">
-        <svg class="w-5 h-5 mr-3 group-hover:rotate-6 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="pt-4 pb-2 px-4 shadow-sm">
+        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Management</span>
+      </div>
+
+      <a href="/admin?tab=customers" 
+         @click.prevent="if(window.location.pathname === '/admin') { activeTab = 'customers'; sidebarOpen = false; } else { window.location.href = '/admin?tab=customers' }"
+         class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group"
+         :class="(window.location.pathname === '/admin' && activeTab === 'customers') ? 'bg-container text-primary shadow-sm' : 'text-gray-600 hover:bg-container hover:text-primary'">
+        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
-        <span class="font-medium">Manage Users</span>
+        <span class="font-medium">Customers</span>
+      </a>
+
+      <a href="/admin?tab=telecallers" 
+         @click.prevent="if(window.location.pathname === '/admin') { activeTab = 'telecallers'; sidebarOpen = false; } else { window.location.href = '/admin?tab=telecallers' }"
+         class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group"
+         :class="(window.location.pathname === '/admin' && activeTab === 'telecallers') ? 'bg-container text-primary shadow-sm' : 'text-gray-600 hover:bg-container hover:text-primary'">
+        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+        <span class="font-medium">Telecallers</span>
       </a>
       <% } %>
 
