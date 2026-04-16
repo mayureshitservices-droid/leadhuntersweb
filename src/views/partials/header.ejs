@@ -11,10 +11,10 @@
 <body class="bg-bg-light font-sans text-gray-800 antialiased min-h-screen flex" 
   x-data="{ 
     sidebarOpen: false, 
-    activeTab: new URLSearchParams(window.location.search).get('tab') || 'customers' 
+    activeTab: new URLSearchParams(window.location.search).get('tab') || (window.location.pathname === '/owner' ? 'upload' : 'customers')
   }"
   x-init="$watch('activeTab', value => {
-    if (window.location.pathname === '/admin') {
+    if (window.location.pathname === '/admin' || window.location.pathname === '/owner') {
       const url = new URL(window.location);
       url.searchParams.set('tab', value);
       window.history.replaceState({}, '', url);
@@ -74,6 +74,30 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
         </svg>
         <span class="font-medium">Telecallers</span>
+      </a>
+      <% } else if (user.role === 'BUSINESS_OWNER') { %>
+      <div class="pt-4 pb-2 px-4 shadow-sm">
+        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Leads & Activity</span>
+      </div>
+
+      <a href="/owner?tab=upload" 
+         @click.prevent="if(window.location.pathname === '/owner') { activeTab = 'upload'; sidebarOpen = false; } else { window.location.href = '/owner?tab=upload' }"
+         class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group"
+         :class="(window.location.pathname === '/owner' && activeTab === 'upload') ? 'bg-container text-primary shadow-sm' : 'text-gray-600 hover:bg-container hover:text-primary'">
+        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        <span class="font-medium">Upload Leads</span>
+      </a>
+
+      <a href="/owner?tab=activity" 
+         @click.prevent="if(window.location.pathname === '/owner') { activeTab = 'activity'; sidebarOpen = false; } else { window.location.href = '/owner?tab=activity' }"
+         class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group"
+         :class="(window.location.pathname === '/owner' && activeTab === 'activity') ? 'bg-container text-primary shadow-sm' : 'text-gray-600 hover:bg-container hover:text-primary'">
+        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        <span class="font-medium">Live Activity</span>
       </a>
       <% } %>
 

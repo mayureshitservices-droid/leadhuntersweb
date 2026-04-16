@@ -13,45 +13,30 @@ export class LeadController {
       const limit = parseInt(req.query.limit as string) || 20;
       const offset = parseInt(req.query.offset as string) || 0;
 
-      // Dispatcher Logic: Find all B.O. assigned to this telecaller
-      const assignments = await prisma.telecallerAssignment.findMany({
-        where: { telecaller_id: req.user.id },
-        include: { business_owner: true }
-      });
-
-      if (assignments.length === 0) {
-        return res.json({ leads: [] });
-      }
-
-      const assignedBoIds = assignments.map(a => a.business_owner_id);
-      
-      // We map ids to names for Android App consumption
-      const boMap: Record<string, string> = {};
-      assignments.forEach(a => {
-        boMap[a.business_owner_id] = a.business_owner.name;
-      });
-
-      // Get leads belonging to assigned BOs, prioritizing PENDING
+      // Only serve leads explicitly assigned to this telecaller by the business owner
       const leads = await prisma.lead.findMany({
         where: {
-          business_owner_id: { in: assignedBoIds },
+          telecaller_id: req.user.id,
           status: 'PENDING'
         },
         orderBy: {
           created_at: 'asc' // Oldest pending first
         },
         take: limit,
-        skip: offset
+        skip: offset,
+        include: {
+          business_owner: { select: { name: true } }
+        }
       });
 
-      // Map to contract
+      // Map to Android app contract
       const mappedLeads = leads.map(lead => ({
         id: lead.id,
         name: lead.name,
         phone: lead.phone,
         status: lead.status,
         business_owner_id: lead.business_owner_id,
-        business_owner_name: boMap[lead.business_owner_id]
+        business_owner_name: lead.business_owner.name
       }));
 
       res.json({ leads: mappedLeads });

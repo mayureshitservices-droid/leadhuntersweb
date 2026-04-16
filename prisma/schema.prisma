@@ -34,7 +34,8 @@ model User {
   created_at    DateTime @default(now())
 
   // Relations
-  leads              Lead[]
+  owned_leads        Lead[]                 @relation("OwnerLeads")
+  assigned_leads     Lead[]                 @relation("TelecallerLeads")
   call_logs          CallLog[]
   telecaller_assigns TelecallerAssignment[] @relation("TelecallerAssignments")
   owner_assigns      TelecallerAssignment[] @relation("OwnerAssignments")
@@ -56,14 +57,18 @@ model TelecallerAssignment {
 model Lead {
   id                String     @id @default(uuid())
   business_owner_id String
+  telecaller_id     String?
   name              String
   phone             String
   status            LeadStatus @default(PENDING)
   created_at        DateTime   @default(now())
 
   // Relations
-  business_owner User      @relation(fields: [business_owner_id], references: [id], onDelete: Cascade)
+  business_owner User      @relation("OwnerLeads", fields: [business_owner_id], references: [id], onDelete: Cascade)
+  telecaller     User?     @relation("TelecallerLeads", fields: [telecaller_id], references: [id], onDelete: SetNull)
   call_logs      CallLog[]
+
+  @@unique([business_owner_id, phone])
 }
 
 model CallLog {
