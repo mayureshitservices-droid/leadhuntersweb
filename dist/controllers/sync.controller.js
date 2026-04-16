@@ -81,12 +81,16 @@ export class SyncController {
                 const response = await ociClient.putObject(putObjectRequest);
                 fs.unlinkSync(req.file.path); // cleanup
                 const recordingUrl = `https://objectstorage.${process.env.OCI_REGION}.oraclecloud.com/n/${namespace}/b/${bucketName}/o/${encodeURIComponent(objectName)}`;
-                await prisma.callLog.update({
+                const updatedLog = await prisma.callLog.update({
                     where: { id: logId },
-                    data: { recording_url: recordingUrl }
+                    data: { recording_url: recordingUrl },
+                    include: { lead: true }
                 });
-                // We can emit again or rely on polling. Ideally emit an update.
-                // For simplicity, we just return the URL.
+                // Notify owner dashboard about the new recording
+                io.to(`dashboard_${updatedLog.lead.business_owner_id}`).emit('recording_ready', {
+                    log_id: logId,
+                    recording_url: recordingUrl
+                });
                 res.json({ success: true, recording_url: recordingUrl });
             }
             catch (error) {

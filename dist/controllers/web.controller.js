@@ -2,6 +2,17 @@ import bcrypt from 'bcrypt';
 import { prisma } from '../config/db.js';
 import fs from 'fs';
 import csv from 'csv-parser';
+import path from 'path';
+import * as XLSX from 'xlsx';
+const safeUnlink = (filePath) => {
+    try {
+        if (fs.existsSync(filePath))
+            fs.unlinkSync(filePath);
+    }
+    catch (err) {
+        console.error(`SafeUnlink failed for ${filePath}:`, err);
+    }
+};
 export class WebController {
     getLogin = (req, res) => {
         if (req.session.user) {
@@ -58,75 +69,178 @@ export class WebController {
         res.redirect('/login');
     };
     getSuperAdminDashboard = async (req, res) => {
-        if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
-            return res.redirect('/login');
-        }
+        const user = req.session.user;
         // Fetch needed data for Admin
         const businessOwners = await prisma.user.findMany({ where: { role: 'BUSINESS_OWNER' } });
         const telecallers = await prisma.user.findMany({ where: { role: 'TELECALLER' } });
         res.render('admin_dashboard', {
-            user: req.session.user,
+            user,
             businessOwners,
             telecallers
         });
     };
     getOwnerDashboard = async (req, res) => {
-        if (!req.session.user || req.session.user.role !== 'BUSINESS_OWNER') {
-            return res.redirect('/login');
-        }
-        const ownerId = req.session.user.id;
+        const user = req.session.user;
+        const ownerId = user.id;
         const stats = {
             total: await prisma.lead.count({ where: { business_owner_id: ownerId } }),
             pending: await prisma.lead.count({ where: { business_owner_id: ownerId, status: 'PENDING' } }),
             answered: await prisma.lead.count({ where: { business_owner_id: ownerId, status: 'ANSWERED' } })
         };
-        // Note: In real world, we pass messages via session flashing. Using simplest pattern for now.
-        const uploadMsg = req.query.upload === 'success' ? 'Leads uploaded successfully!' : null;
+        let uploadMsg = null;
+        let errorMsg = null;
+        if (req.query.upload === 'success')
+            uploadMsg = 'Leads uploaded successfully!';
+        if (req.query.upload === 'error') {
+            const foundHeaders = req.query.headers ? String(req.query.headers) : null;
+            if (req.query.msg === 'invalid_file_type') {
+                errorMsg = 'Invalid file type. Please upload CSV or Excel.';
+            }
+            else if (req.query.msg === 'missing_columns') {
+                errorMsg = `Failed to upload: Missing "Name" or "Phone" columns. Found headers: [${foundHeaders || 'None'}]`;
+            }
+            else if (req.query.msg === 'empty_file') {
+                errorMsg = 'The uploaded file is empty.';
+            }
+            else {
+                errorMsg = 'Failed to upload leads. Please check your data format.';
+            }
+        }
+        let assignMsg = null;
+        let assignError = null;
+        if (req.query.assign === 'success') {
+            const count = req.query.count || '0';
+            assignMsg = `Successfully assigned ${count} lead(s) to the selected telecaller!`;
+        }
+        if (req.query.assign === 'error') {
+            assignError = req.query.msg === 'no_telecaller'
+                ? 'Please select a telecaller before assigning.'
+                : 'Failed to assign leads. Please try again.';
+        }
+        // Fetch telecallers assigned to this business owner
+        const assignments = await prisma.telecallerAssignment.findMany({
+            where: { business_owner_id: ownerId },
+            include: { telecaller: { select: { id: true, name: true, device_alias: true } } }
+        });
+        const telecallers = assignments.map(a => ({
+            id: a.telecaller.id,
+            name: a.telecaller.device_alias || a.telecaller.name
+        }));
+        const leads = await prisma.lead.findMany({
+            where: { business_owner_id: ownerId },
+            orderBy: { created_at: 'desc' },
+            take: 100,
+            include: { telecaller: { select: { name: true, device_alias: true } } }
+        });
         res.render('owner_dashboard', {
-            user: req.session.user,
+            user,
             stats,
-            uploadMsg
+            uploadMsg,
+            errorMsg,
+            assignMsg,
+            assignError,
+            leads,
+            telecallers
         });
     };
     postUploadLeads = async (req, res) => {
-        if (!req.session.user || req.session.user.role !== 'BUSINESS_OWNER') {
-            return res.status(403).send('Forbidden');
-        }
         if (!req.file) {
             return res.redirect('/owner?upload=error');
         }
-        const results = [];
         const ownerId = req.session.user.id;
-        fs.createReadStream(req.file.path)
-            .pipe(csv())
-            .on('data', (data) => results.push(data))
-            .on('end', async () => {
-            try {
-                const leadsToInsert = results.map(row => ({
-                    business_owner_id: ownerId,
-                    name: row.name || row.Name || 'Unknown',
-                    phone: row.phone || row.Phone || '0000000000'
-                }));
-                if (leadsToInsert.length > 0) {
-                    await prisma.lead.createMany({
-                        data: leadsToInsert,
-                        skipDuplicates: true
-                    });
-                }
-                fs.unlinkSync(req.file.path);
-                res.redirect('/owner?upload=success');
+        const filePath = req.file.path;
+        const fileExt = path.extname(req.file.originalname).toLowerCase();
+        try {
+            let results = [];
+            if (fileExt === '.csv') {
+                // Handle CSV
+                results = await new Promise((resolve, reject) => {
+                    const rows = [];
+                    fs.createReadStream(filePath)
+                        .pipe(csv())
+                        .on('data', (data) => rows.push(data))
+                        .on('error', (err) => reject(err))
+                        .on('end', () => resolve(rows));
+                });
             }
-            catch (err) {
-                console.error(err);
-                res.redirect('/owner?upload=error');
+            else if (fileExt === '.xlsx' || fileExt === '.xls') {
+                // Handle Excel
+                const workbook = XLSX.readFile(filePath);
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                results = XLSX.utils.sheet_to_json(worksheet);
             }
+            else {
+                safeUnlink(filePath);
+                return res.redirect('/owner?upload=error&msg=invalid_file_type');
+            }
+            if (results.length === 0) {
+                safeUnlink(filePath);
+                return res.redirect('/owner?upload=error&msg=empty_file');
+            }
+            // Collect all headers for debugging
+            const allHeaders = results.length > 0 ? Object.keys(results[0]).join(', ') : '';
+            const leadsToInsert = results
+                .map(row => this.normalizeLead(row, ownerId))
+                .filter(lead => lead.name && lead.phone && lead.phone !== '0000000000');
+            if (leadsToInsert.length === 0) {
+                safeUnlink(filePath);
+                return res.redirect(`/owner?upload=error&msg=missing_columns&headers=${encodeURIComponent(allHeaders)}`);
+            }
+            await prisma.lead.createMany({
+                data: leadsToInsert,
+                skipDuplicates: true
+            });
+            safeUnlink(filePath);
+            res.redirect('/owner?upload=success');
+        }
+        catch (err) {
+            console.error('Upload Error:', err);
+            safeUnlink(filePath);
+            res.redirect('/owner?upload=error');
+        }
+    };
+    normalizeLead = (row, ownerId, telecallerId) => {
+        // Normalize keys to lowercase for easier lookup
+        const normalizedRow = {};
+        Object.keys(row).forEach(key => {
+            normalizedRow[key.toLowerCase().trim()] = row[key];
         });
+        const name = normalizedRow.name || normalizedRow['full name'] || normalizedRow['customer name'] || normalizedRow['client name'] || normalizedRow['lead name'] || 'Unknown';
+        const phone = normalizedRow.phone || normalizedRow.mobile || normalizedRow.number || normalizedRow['phone number'] || normalizedRow['contact number'] || normalizedRow['mobile number'] || '0000000000';
+        return {
+            business_owner_id: ownerId,
+            telecaller_id: telecallerId || null,
+            name: String(name).trim(),
+            phone: String(phone).trim().replace(/[^\d+]/g, '') // Keep digits and + only
+        };
+    };
+    postAssignLeads = async (req, res) => {
+        try {
+            const ownerId = req.session.user.id;
+            const { telecaller_id } = req.body;
+            if (!telecaller_id || telecaller_id.trim() === '') {
+                return res.redirect('/owner?tab=upload&assign=error&msg=no_telecaller');
+            }
+            // Assign all unassigned (telecaller_id = null) leads belonging to this owner
+            const result = await prisma.lead.updateMany({
+                where: {
+                    business_owner_id: ownerId,
+                    telecaller_id: null
+                },
+                data: {
+                    telecaller_id: telecaller_id
+                }
+            });
+            return res.redirect(`/owner?tab=upload&assign=success&count=${result.count}`);
+        }
+        catch (err) {
+            console.error('Assign Error:', err);
+            return res.redirect('/owner?tab=upload&assign=error');
+        }
     };
     updateDeviceAlias = async (req, res) => {
         try {
-            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
-                return res.status(403).json({ error: 'Unauthorized' });
-            }
             const { telecallerId, deviceAlias } = req.body;
             if (!telecallerId) {
                 return res.status(400).json({ error: 'Telecaller ID is required' });
@@ -144,9 +258,6 @@ export class WebController {
     };
     createCustomer = async (req, res) => {
         try {
-            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
-                return res.status(403).json({ error: 'Unauthorized' });
-            }
             const { name, email, password, phone, payment_terms, status } = req.body;
             if (!name || !email || !password) {
                 return res.status(400).json({ error: 'Name, Email, and Password are required.' });
@@ -175,9 +286,6 @@ export class WebController {
     };
     updateCustomer = async (req, res) => {
         try {
-            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
-                return res.status(403).json({ error: 'Unauthorized' });
-            }
             const { id, name, email, phone, payment_terms } = req.body;
             if (!id || !name || !email) {
                 return res.status(400).json({ error: 'ID, Name, and Email are required.' });
@@ -203,9 +311,6 @@ export class WebController {
     };
     updateCustomerStatus = async (req, res) => {
         try {
-            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
-                return res.status(403).json({ error: 'Unauthorized' });
-            }
             const { id, status } = req.body;
             if (!id || !status) {
                 return res.status(400).json({ error: 'ID and Status are required.' });
@@ -223,9 +328,6 @@ export class WebController {
     };
     deleteCustomer = async (req, res) => {
         try {
-            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
-                return res.status(403).json({ error: 'Unauthorized' });
-            }
             const { id } = req.body;
             if (!id) {
                 return res.status(400).json({ error: 'Customer ID is required.' });
@@ -242,9 +344,6 @@ export class WebController {
     };
     getTelecallerAssignments = async (req, res) => {
         try {
-            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
-                return res.status(403).json({ error: 'Unauthorized' });
-            }
             const id = req.params.id;
             const assignments = await prisma.telecallerAssignment.findMany({
                 where: { telecaller_id: id },
@@ -259,9 +358,6 @@ export class WebController {
     };
     updateTelecallerAssignments = async (req, res) => {
         try {
-            if (!req.session.user || req.session.user.role !== 'SUPER_ADMIN') {
-                return res.status(403).json({ error: 'Unauthorized' });
-            }
             const telecallerId = req.body.telecallerId;
             const businessOwnerIds = req.body.businessOwnerIds;
             if (!telecallerId || !Array.isArray(businessOwnerIds)) {
