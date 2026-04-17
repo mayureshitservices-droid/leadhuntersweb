@@ -10,7 +10,7 @@ export class LeadController {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
-      const limit = parseInt(req.query.limit as string) || 20;
+      const limit = parseInt(req.query.limit as string) || 1000;
       const offset = parseInt(req.query.offset as string) || 0;
 
       // Only serve leads explicitly assigned to this telecaller by the business owner
