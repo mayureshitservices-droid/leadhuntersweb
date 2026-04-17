@@ -120,4 +120,49 @@ export class SyncController {
     });
   };
 
+  syncCallOutcome = async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.user || req.user.role !== 'TELECALLER') {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const { call_log_id, lead_id, outcome_type, remarks, next_reminder } = req.body;
+
+      // Find the lead to ensure it exists and get business owner info for socket notification
+      const lead = await prisma.lead.findUnique({ where: { id: lead_id } });
+      if (!lead) return res.status(404).json({ error: 'Lead not found' });
+
+      // Create the Outcome
+      const outcome = await prisma.callOutcome.create({
+        data: {
+          call_log_id: call_log_id,
+          lead_id: lead_id,
+          outcome_type: outcome_type,
+          remarks: remarks,
+          next_reminder: next_reminder ? new Date(next_reminder) : null
+        }
+      });
+
+      // Optionally update lead status based on outcome
+      // e.g., If outcome is "Converted", status = "ANSWERED" (or a different business logic)
+      // Since Android already synced the CallLog status which updated the lead, 
+      // we might not strictly need to update it again here unless we want more granular control.
+
+      // Notify dashboard via Socket.IO
+      io.to(`dashboard_${lead.business_owner_id}`).emit('call_outcome_added', {
+        log_id: call_log_id,
+        lead_id: lead_id,
+        lead_name: lead.name,
+        outcome_type,
+        remarks,
+        next_reminder: next_reminder ? new Date(next_reminder).toISOString() : null
+      });
+
+      res.status(201).json({ success: true, outcome_id: outcome.id });
+    } catch (error) {
+       console.error('Outcome Sync Error:', error);
+       res.status(500).json({ error: 'Internal server error' });
+    }
+  };
+
 }

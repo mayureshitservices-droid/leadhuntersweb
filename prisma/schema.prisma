@@ -18,6 +18,7 @@ enum LeadStatus {
   ANSWERED
   MISSED
   BUSY
+  REJECTED
 }
 
 model User {
@@ -64,9 +65,10 @@ model Lead {
   created_at        DateTime   @default(now())
 
   // Relations
-  business_owner User      @relation("OwnerLeads", fields: [business_owner_id], references: [id], onDelete: Cascade)
-  telecaller     User?     @relation("TelecallerLeads", fields: [telecaller_id], references: [id], onDelete: SetNull)
+  business_owner User          @relation("OwnerLeads", fields: [business_owner_id], references: [id], onDelete: Cascade)
+  telecaller     User?         @relation("TelecallerLeads", fields: [telecaller_id], references: [id], onDelete: SetNull)
   call_logs      CallLog[]
+  outcomes       CallOutcome[]
 
   @@unique([business_owner_id, phone])
 }
@@ -81,6 +83,21 @@ model CallLog {
   created_at       DateTime @default(now())
 
   // Relations
-  lead       Lead @relation(fields: [lead_id], references: [id], onDelete: Cascade)
-  telecaller User @relation(fields: [telecaller_id], references: [id], onDelete: Cascade)
+  lead       Lead         @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  telecaller User         @relation(fields: [telecaller_id], references: [id], onDelete: Cascade)
+  outcome    CallOutcome?
+}
+
+model CallOutcome {
+  id            String    @id @default(uuid())
+  call_log_id   String    @unique
+  lead_id       String
+  outcome_type  String
+  remarks       String?
+  next_reminder DateTime?
+  created_at    DateTime  @default(now())
+
+  // Relations
+  call_log CallLog @relation(fields: [call_log_id], references: [id], onDelete: Cascade)
+  lead     Lead    @relation(fields: [lead_id], references: [id], onDelete: Cascade)
 }
