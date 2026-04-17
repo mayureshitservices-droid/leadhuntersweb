@@ -19,6 +19,7 @@ enum LeadStatus {
   MISSED
   BUSY
   REJECTED
+  CANCELLED
 }
 
 model User {

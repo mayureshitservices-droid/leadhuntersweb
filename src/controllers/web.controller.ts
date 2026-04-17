@@ -143,7 +143,10 @@ export class WebController {
         where: { business_owner_id: ownerId },
         orderBy: { created_at: 'desc' },
         take: 100,
-        include: { telecaller: { select: { name: true, device_alias: true } } }
+                include: { 
+          telecaller: { select: { name: true, device_alias: true } }, 
+          outcomes: { orderBy: { created_at: 'desc' }, take: 1 } 
+        }
      });
 
      res.render('owner_dashboard', {
@@ -427,6 +430,36 @@ export class WebController {
     } catch (error) {
       console.error('Error updating assignments:', error);
       res.status(500).json({ error: 'Internal server error.' });
+    }
+  };
+
+  getLeadHistory = async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id as string;
+      const ownerId = req.session.user!.id;
+
+      // Ensure lead belongs to this owner
+      const lead = await prisma.lead.findFirst({
+        where: { id, business_owner_id: ownerId }
+      });
+
+      if (!lead) {
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+
+      const history = await prisma.callLog.findMany({
+        where: { lead_id: id },
+        orderBy: { created_at: 'desc' },
+        include: { 
+          outcome: true,
+          telecaller: { select: { name: true, device_alias: true } }
+        }
+      });
+
+      res.json({ history });
+    } catch (error) {
+      console.error('Error fetching history:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   };
 

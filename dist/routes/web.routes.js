@@ -18,6 +18,7 @@ router.post('/admin/update-customer-status', requireRole('SUPER_ADMIN'), webCont
 router.post('/admin/delete-customer', requireRole('SUPER_ADMIN'), webController.deleteCustomer);
 // Owner Routes
 router.get('/owner', requireRole('BUSINESS_OWNER'), webController.getOwnerDashboard);
+router.get('/owner/lead/:id/history', requireRole('BUSINESS_OWNER'), webController.getLeadHistory);
 router.post('/owner/upload-leads', requireRole('BUSINESS_OWNER'), upload.single('leads_file'), webController.postUploadLeads);
 router.post('/owner/assign-leads', requireRole('BUSINESS_OWNER'), webController.postAssignLeads);
 // Assignments
