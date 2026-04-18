@@ -16,14 +16,22 @@ export class SyncController {
 
   syncCallLog = async (req: AuthRequest, res: Response) => {
     try {
+      console.log(`[SYNC] Received call log sync request from user: ${req.user?.id} (${req.user?.role})`);
+      console.log(`[SYNC] Payload:`, JSON.stringify(req.body, null, 2));
+
       if (!req.user || req.user.role !== 'TELECALLER') {
+         console.warn(`[SYNC] Forbidden: User ${req.user?.id} has role ${req.user?.role}`);
          return res.status(403).json({ error: 'Forbidden' });
       }
 
       const { lead_id, duration_seconds, status, notes } = req.body;
 
       const lead = await prisma.lead.findUnique({ where: { id: lead_id } });
-      if (!lead) return res.status(404).json({ error: 'Lead not found' });
+      if (!lead) {
+         console.error(`[SYNC] Lead NOT FOUND for ID: ${lead_id}`);
+         return res.status(404).json({ error: 'Lead not found' });
+      }
+      console.log(`[SYNC] Found lead: ${lead.name} (${lead.id})`);
 
       // Update lead status
       await prisma.lead.update({
@@ -122,7 +130,11 @@ export class SyncController {
 
   syncCallOutcome = async (req: AuthRequest, res: Response) => {
     try {
+      console.log(`[OUTCOME] Received outcome sync request from user: ${req.user?.id}`);
+      console.log(`[OUTCOME] Payload:`, JSON.stringify(req.body, null, 2));
+
       if (!req.user || req.user.role !== 'TELECALLER') {
+        console.warn(`[OUTCOME] Forbidden: User ${req.user?.id} has role ${req.user?.role}`);
         return res.status(403).json({ error: 'Forbidden' });
       }
 
@@ -130,7 +142,11 @@ export class SyncController {
 
       // Find the lead to ensure it exists and get business owner info for socket notification
       const lead = await prisma.lead.findUnique({ where: { id: lead_id } });
-      if (!lead) return res.status(404).json({ error: 'Lead not found' });
+      if (!lead) {
+        console.error(`[OUTCOME] Lead NOT FOUND for ID: ${lead_id}`);
+        return res.status(404).json({ error: 'Lead not found' });
+      }
+      console.log(`[OUTCOME] Found lead: ${lead.name} (${lead.id})`);
 
       // Create the Outcome
       const outcome = await prisma.callOutcome.create({
