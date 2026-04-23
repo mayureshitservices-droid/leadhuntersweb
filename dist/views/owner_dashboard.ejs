@@ -83,62 +83,55 @@
           </span>
         </div>
         
-        <div class="overflow-x-auto relative hidden-scrollbar border-t border-gray-100">
+        <div class="overflow-x-auto max-h-[400px] overflow-y-auto relative hidden-scrollbar border-t border-gray-100">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm border-b border-gray-200">
               <tr>
-                <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</th>
-                <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mobile No.</th>
-                <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Assigned To</th>
-                <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Added On</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile No.</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added On</th>
               </tr>
             </thead>
-            <tbody id="leads-table-body" class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white divide-y divide-gray-200">
               <% if (locals.leads && leads.length > 0) { %>
                 <% leads.forEach(function(lead) { %>
-                  <tr class="lead-row hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900"><%= lead.name %></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium"><%= lead.phone %></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-700">
+                  <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= lead.name %></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= lead.phone %></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                       <% if (lead.telecaller) { %>
-                        <span class="inline-flex items-center gap-1.5 font-medium">
-                          <span class="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>
+                        <span class="inline-flex items-center gap-1.5">
+                          <span class="w-2 h-2 rounded-full bg-blue-400 shrink-0"></span>
                           <%= lead.telecaller.device_alias || lead.telecaller.name %>
                         </span>
                       <% } else { %>
-                        <span class="text-gray-400 italic text-[10px]">Unassigned</span>
+                        <span class="text-gray-400 italic text-xs">Unassigned</span>
                       <% } %>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-bold text-gray-900 uppercase"><%= lead.status %></div>
+                      <% 
+                        let statusClass = 'bg-gray-100 text-gray-800';
+                        if (lead.status === 'PENDING') statusClass = 'bg-amber-100 text-amber-800';
+                        else if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(lead.status)) statusClass = 'bg-green-100 text-green-800';
+                        else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(lead.status)) statusClass = 'bg-red-100 text-red-800';
+                        else if (lead.status === 'REMIND_LATER') statusClass = 'bg-blue-100 text-blue-800';
+                      %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider <%= statusClass %>">
+                        <%= lead.status %>
+                      </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium"><%= new Date(lead.created_at).toLocaleDateString() %></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= new Date(lead.created_at).toLocaleDateString() %></td>
                   </tr>
                 <% }); %>
               <% } else { %>
-                <tr id="leads-empty-state">
-                  <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500 font-medium italic">No leads found.</td>
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500 font-medium italic">No leads found. Upload a file to get started!</td>
                 </tr>
               <% } %>
             </tbody>
           </table>
-        </div>
-        
-        <!-- Leads Pagination Controls -->
-        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-           <div class="text-xs text-gray-500 font-medium" id="leads-pagination-info">
-             Showing <span id="leads-start-range">0</span> to <span id="leads-end-range">0</span> of <span id="leads-total-count">0</span> leads
-           </div>
-           <div class="flex items-center gap-2">
-             <button id="leads-prev-page" class="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-gray-400 disabled:hover:border-gray-200 transition-all">
-               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-             </button>
-             <div id="leads-page-numbers" class="flex items-center gap-1"></div>
-             <button id="leads-next-page" class="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-gray-400 disabled:hover:border-gray-200 transition-all">
-               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-             </button>
-           </div>
         </div>
       </div>
 
@@ -188,10 +181,10 @@
       
     </div>
 
-    <!-- Detailed View Feed -->
+    <!-- Live Activity Feed -->
     <div x-cloak x-show="activeTab === 'activity'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="bg-white shadow rounded-2xl overflow-hidden border border-gray-100">
       <div class="px-6 py-5 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
-        <h3 class="text-lg leading-6 font-bold text-gray-900">Detailed View</h3>
+        <h3 class="text-lg leading-6 font-bold text-gray-900">Live Call Activity</h3>
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
           <span class="w-2 h-2 mr-1.5 bg-green-500 rounded-full animate-pulse"></span>
           Live
@@ -236,13 +229,12 @@
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Outcome</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Remarks</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Telecaller</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Recording</th>
                </tr>
              </thead>
              <tbody id="live-calls" class="bg-white divide-y divide-gray-200">
                <% if (locals.callLogs && callLogs.length > 0) { %>
                  <% callLogs.forEach(function(log) { %>
-                   <tr id="log-<%= log.id %>" class="log-row hover:bg-gray-50 transition-colors animate-fade-in-up">
+                   <tr id="log-<%= log.id %>" class="hover:bg-gray-50 transition-colors animate-fade-in-up">
                      <td class="px-6 py-4 whitespace-nowrap">
                        <div class="text-sm font-bold text-gray-900"><%= log.lead.name %></div>
                      </td>
@@ -271,30 +263,38 @@
                         </span>
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap">
-                       <div class="text-sm font-bold text-gray-900 uppercase"><%= log.status %></div>
+                        <% 
+                          let logStatusClass = 'bg-gray-100 text-gray-800';
+                          if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(log.status)) logStatusClass = 'bg-green-100 text-green-800';
+                          else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(log.status)) logStatusClass = 'bg-red-100 text-red-800';
+                          else if (log.status === 'REMIND_LATER') logStatusClass = 'bg-blue-100 text-blue-800';
+                        %>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider <%= logStatusClass %>">
+                          <%= log.status %>
+                        </span>
                      </td>
                      <td class="px-6 py-4">
                        <div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="<%= log.notes %>">
                          <%= log.notes || '—' %>
                        </div>
+                       <% if (log.recording_url) { %>
+                         <div class="mt-2 audio-container">
+                            <audio controls src="<%= log.recording_url %>" class="h-6 w-32 outline-none"></audio>
+                         </div>
+                       <% } else { %>
+                         <div class="mt-2 audio-container"></div>
+                       <% } %>
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap">
                         <div class="text-xs font-medium text-gray-700">
                           <%= log.telecaller.device_alias || log.telecaller.name %>
                         </div>
                      </td>
-                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="audio-container">
-                          <% if (log.recording_url) { %>
-                             <audio controls src="<%= log.recording_url %>" class="h-6 w-32 outline-none"></audio>
-                          <% } %>
-                        </div>
-                     </td>
                    </tr>
                  <% }); %>
                <% } else { %>
                  <tr id="empty-state">
-                   <td colspan="9" class="px-6 py-12 text-center text-sm text-gray-500 font-medium italic">
+                   <td colspan="8" class="px-6 py-12 text-center text-sm text-gray-500 font-medium italic">
                       <div class="flex flex-col items-center">
                         <svg class="w-12 h-12 text-gray-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         <span>Waiting for fresh call logs via Socket...</span>
@@ -305,33 +305,11 @@
              </tbody>
            </table>
        </div>
-       
-       <!-- Pagination Controls -->
-       <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-          <div class="text-xs text-gray-500 font-medium" id="pagination-info">
-            Showing <span id="start-range">0</span> to <span id="end-range">0</span> of <span id="total-count">0</span> logs
-          </div>
-          <div class="flex items-center gap-2">
-            <button id="prev-page" class="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-gray-400 disabled:hover:border-gray-200 transition-all">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <div id="page-numbers" class="flex items-center gap-1">
-              <!-- JS will inject page numbers here -->
-            </div>
-            <button id="next-page" class="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-primary hover:border-primary disabled:opacity-30 disabled:hover:text-gray-400 disabled:hover:border-gray-200 transition-all">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-            </button>
-          </div>
-       </div>
     </div>
   </div>
 </div>
 
 <script>
-  let currentPage = 1;
-  let leadsPage = 1;
-  const rowsPerPage = 5;
-
   function formatDuration(totalSeconds) {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
@@ -348,98 +326,6 @@
     return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${status}</span>`;
   }
 
-  function updatePagination() {
-    const tbody = document.getElementById('live-calls');
-    if (!tbody) return;
-    
-    const rows = Array.from(tbody.querySelectorAll('tr:not(#empty-state)'));
-    const totalCount = rows.length;
-    const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
-
-    if (currentPage > totalPages) currentPage = totalPages;
-    if (currentPage < 1) currentPage = 1;
-
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    rows.forEach((row, index) => {
-      row.style.display = (index >= start && index < end) ? '' : 'none';
-    });
-
-    if (document.getElementById('start-range')) document.getElementById('start-range').innerText = totalCount === 0 ? 0 : start + 1;
-    if (document.getElementById('end-range')) document.getElementById('end-range').innerText = Math.min(end, totalCount);
-    if (document.getElementById('total-count')) document.getElementById('total-count').innerText = totalCount;
-
-    if (document.getElementById('prev-page')) document.getElementById('prev-page').disabled = currentPage === 1;
-    if (document.getElementById('next-page')) document.getElementById('next-page').disabled = currentPage === totalPages;
-
-    const pageContainer = document.getElementById('page-numbers');
-    if (pageContainer) {
-        pageContainer.innerHTML = '';
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-        for (let i = startPage; i <= endPage; i++) {
-          const btn = document.createElement('button');
-          btn.className = `w-8 h-8 rounded-lg text-xs font-bold transition-all ${i === currentPage ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-100'}`;
-          btn.innerText = i;
-          btn.onclick = () => { currentPage = i; updatePagination(); };
-          pageContainer.appendChild(btn);
-        }
-    }
-  }
-
-  function updateLeadsPagination() {
-    const tbody = document.getElementById('leads-table-body');
-    if (!tbody) return;
-    
-    const rows = Array.from(tbody.querySelectorAll('.lead-row'));
-    const totalCount = rows.length;
-    const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
-
-    if (leadsPage > totalPages) leadsPage = totalPages;
-    if (leadsPage < 1) leadsPage = 1;
-
-    const start = (leadsPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    rows.forEach((row, index) => {
-      row.style.display = (index >= start && index < end) ? '' : 'none';
-    });
-
-    if (document.getElementById('leads-start-range')) document.getElementById('leads-start-range').innerText = totalCount === 0 ? 0 : start + 1;
-    if (document.getElementById('leads-end-range')) document.getElementById('leads-end-range').innerText = Math.min(end, totalCount);
-    if (document.getElementById('leads-total-count')) document.getElementById('leads-total-count').innerText = totalCount;
-
-    if (document.getElementById('leads-prev-page')) document.getElementById('leads-prev-page').disabled = leadsPage === 1;
-    if (document.getElementById('leads-next-page')) document.getElementById('leads-next-page').disabled = leadsPage === totalPages;
-
-    const pageContainer = document.getElementById('leads-page-numbers');
-    if (pageContainer) {
-        pageContainer.innerHTML = '';
-        let startPage = Math.max(1, leadsPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-        for (let i = startPage; i <= endPage; i++) {
-          const btn = document.createElement('button');
-          btn.className = `w-8 h-8 rounded-lg text-xs font-bold transition-all ${i === leadsPage ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-100'}`;
-          btn.innerText = i;
-          btn.onclick = () => { leadsPage = i; updateLeadsPagination(); };
-          pageContainer.appendChild(btn);
-        }
-    }
-  }
-
-  document.getElementById('prev-page').onclick = () => { if (currentPage > 1) { currentPage--; updatePagination(); } };
-  document.getElementById('next-page').onclick = () => { currentPage++; updatePagination(); };
-
-  document.getElementById('leads-prev-page').onclick = () => { if (leadsPage > 1) { leadsPage--; updateLeadsPagination(); } };
-  document.getElementById('leads-next-page').onclick = () => { leadsPage++; updateLeadsPagination(); };
-
-  // Initial Pagination
-  updatePagination();
-  updateLeadsPagination();
-
   socket.emit('join_dashboard', '<%= user.id %>');
 
   socket.on('new_call_log', (data) => {
@@ -455,7 +341,7 @@
 
     const tr = document.createElement('tr');
     tr.id = `log-${data.log_id}`;
-    tr.className = "log-row hover:bg-gray-50 transition-colors animate-fade-in-up";
+    tr.className = "hover:bg-gray-50 transition-colors animate-fade-in-up";
     
     const timestamp = new Date().toLocaleString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
 
@@ -467,24 +353,22 @@
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${timestamp}</td>
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${formatDuration(data.duration)}</td>
       <td class="px-6 py-4 whitespace-nowrap lead-status-cell">${getStatusBadge(data.status)}</td>
-      <td class="px-6 py-4 whitespace-nowrap">
-         <div class="text-sm font-bold text-gray-900 uppercase">${data.status}</div>
-      </td>
+      <td class="px-6 py-4 whitespace-nowrap">${getStatusBadge(data.status)}</td>
       <td class="px-6 py-4">
         <div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="${data.notes || ''}">${data.notes || '—'}</div>
+        <div class="mt-2 audio-container"></div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap">
         <div class="text-xs font-medium text-gray-700">${data.telecaller_name}</div>
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap">
-         <div class="audio-container"></div>
       </td>
     `;
     
     list.prepend(tr);
     
-    // Update pagination to reflect new row
-    updatePagination();
+    // limit to 20
+    if (list.children.length > 20) {
+      list.removeChild(list.lastChild);
+    }
   });
 
   socket.on('recording_ready', (data) => {

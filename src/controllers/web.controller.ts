@@ -157,7 +157,7 @@ export class WebController {
            telecaller: { select: { name: true, device_alias: true } }
         },
         orderBy: { created_at: 'desc' },
-        take: 20
+        take: 50
       });
 
       res.render('owner_dashboard', {
