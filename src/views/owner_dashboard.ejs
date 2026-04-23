@@ -111,13 +111,16 @@
                       <% } %>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <% if (lead.status === 'PENDING') { %>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800"><%= lead.status %></span>
-                      <% } else if (lead.status === 'ANSWERED') { %>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= lead.status %></span>
-                      <% } else { %>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><%= lead.status %></span>
-                      <% } %>
+                      <% 
+                        let statusClass = 'bg-gray-100 text-gray-800';
+                        if (lead.status === 'PENDING') statusClass = 'bg-amber-100 text-amber-800';
+                        else if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(lead.status)) statusClass = 'bg-green-100 text-green-800';
+                        else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(lead.status)) statusClass = 'bg-red-100 text-red-800';
+                        else if (lead.status === 'REMIND_LATER') statusClass = 'bg-blue-100 text-blue-800';
+                      %>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider <%= statusClass %>">
+                        <%= lead.status %>
+                      </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= new Date(lead.created_at).toLocaleDateString() %></td>
                   </tr>
@@ -215,8 +218,65 @@
         </div>
       </div>
        <div class="p-6">
-           <ul id="live-calls" class="divide-y divide-gray-200">
-             <li class="py-4 text-center text-gray-500 text-sm italic" id="empty-state">Waiting for fresh call logs via Socket...</li>
+           <ul id="live-calls" class="divide-y divide-gray-100">
+             <% if (locals.callLogs && callLogs.length > 0) { %>
+               <% callLogs.forEach(function(log) { %>
+                 <li id="log-<%= log.id %>" class="py-5 flex justify-between items-start animate-fade-in-up">
+                   <div class="flex-1 pr-4">
+                     <div class="flex items-center">
+                       <span class="text-sm font-bold text-gray-900 mr-2"><%= log.lead.name %></span>
+                       <span class="text-xs text-gray-500 font-medium">(<%= log.lead.phone %>)</span>
+                     </div>
+                     <div class="text-[11px] text-gray-500 mt-1.5 flex items-center gap-2">
+                       <span class="flex items-center">
+                         <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                         <%= log.telecaller.device_alias || log.telecaller.name %>
+                       </span>
+                       <span class="text-gray-300">•</span>
+                       <span class="flex items-center">
+                         <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                         <%= log.duration_seconds %>s
+                       </span>
+                       <span class="text-gray-300">•</span>
+                       <span class="flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <%= new Date(log.created_at).toLocaleString() %>
+                       </span>
+                     </div>
+                     <% if (log.notes) { %>
+                       <div class="mt-3 text-xs bg-blue-50/50 p-2.5 rounded-xl border border-blue-100/50 text-blue-800 leading-relaxed relative overflow-hidden">
+                         <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
+                         <span class="font-bold uppercase text-[9px] block mb-0.5 opacity-60">Notes</span>
+                         <%= log.notes %>
+                       </div>
+                     <% } %>
+                     <% if (log.recording_url) { %>
+                       <div class="mt-3">
+                         <audio controls src="<%= log.recording_url %>" class="h-8 w-full max-w-xs outline-none"></audio>
+                       </div>
+                     <% } %>
+                   </div>
+                   <div class="flex flex-col items-end shrink-0">
+                     <% 
+                       let logStatusClass = 'bg-gray-100 text-gray-800';
+                       if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(log.status)) logStatusClass = 'bg-green-100 text-green-800';
+                       else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(log.status)) logStatusClass = 'bg-red-100 text-red-800';
+                       else if (log.status === 'REMIND_LATER') logStatusClass = 'bg-blue-100 text-blue-800';
+                     %>
+                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider <%= logStatusClass %>">
+                       <%= log.status %>
+                     </span>
+                   </div>
+                 </li>
+               <% }); %>
+             <% } else { %>
+               <li class="py-8 text-center text-gray-500 text-sm italic" id="empty-state">
+                  <div class="flex flex-col items-center">
+                    <svg class="w-12 h-12 text-gray-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span>Waiting for fresh call logs via Socket...</span>
+                  </div>
+               </li>
+             <% } %>
            </ul>
        </div>
     </div>
@@ -231,30 +291,56 @@
     const emptyState = document.getElementById('empty-state');
     if (emptyState) emptyState.remove();
 
-    // Increment Answered Stat if answered
-    if(data.status === 'ANSWERED') {
+    // Increment Answered Stat if answered/positive
+    if(['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(data.status)) {
       const ansEl = document.getElementById('stat-answered');
       if(ansEl) ansEl.innerText = parseInt(ansEl.innerText) + 1;
     }
 
     const li = document.createElement('li');
     li.id = `log-${data.log_id}`;
-    li.className = "py-4 flex justify-between items-center animate-fade-in-up";
+    li.className = "py-5 flex justify-between items-start animate-fade-in-up border-b border-gray-100 last:border-0";
     
-    let badgeClass = data.status === 'ANSWERED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-    let audioMarkup = data.recording_url ? `<audio controls src="${data.recording_url}" class="h-8 mt-2 w-full max-w-xs outline-none"></audio>` : '';
+    let badgeClass = 'bg-gray-100 text-gray-800';
+    if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(data.status)) badgeClass = 'bg-green-100 text-green-800';
+    else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(data.status)) badgeClass = 'bg-red-100 text-red-800';
+    else if (data.status === 'REMIND_LATER') badgeClass = 'bg-blue-100 text-blue-800';
+
+    let notesMarkup = data.notes ? `
+      <div class="mt-3 text-xs bg-blue-50/50 p-2.5 rounded-xl border border-blue-100/50 text-blue-800 leading-relaxed relative overflow-hidden">
+        <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-400"></div>
+        <span class="font-bold uppercase text-[9px] block mb-0.5 opacity-60">Notes</span>
+        ${data.notes}
+      </div>
+    ` : '';
 
     li.innerHTML = `
-      <div class="flex-1">
+      <div class="flex-1 pr-4">
         <div class="flex items-center">
             <span class="text-sm font-bold text-gray-900 mr-2">${data.lead_name}</span>
-            <span class="text-xs text-gray-500">(${data.lead_phone})</span>
+            <span class="text-xs text-gray-500 font-medium">(${data.lead_phone})</span>
         </div>
-        <div class="text-xs text-gray-500 mt-1">Called by <span class="font-medium">${data.telecaller_name}</span> • Duration: ${data.duration}s</div>
-        ${audioMarkup}
+        <div class="text-[11px] text-gray-500 mt-1.5 flex items-center gap-2">
+           <span class="flex items-center">
+             <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+             ${data.telecaller_name}
+           </span>
+           <span class="text-gray-300">•</span>
+           <span class="flex items-center">
+             <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+             ${data.duration}s
+           </span>
+           <span class="text-gray-300">•</span>
+           <span class="flex items-center">
+            <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            Just Now
+           </span>
+        </div>
+        ${notesMarkup}
+        <div class="audio-container mt-3"></div>
       </div>
-      <div>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${badgeClass}">
+      <div class="flex flex-col items-end shrink-0">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
           ${data.status}
         </span>
       </div>
@@ -262,8 +348,8 @@
     
     list.prepend(li);
     
-    // limit to 10
-    if (list.children.length > 10) {
+    // limit to 20
+    if (list.children.length > 20) {
       list.removeChild(list.lastChild);
     }
   });
@@ -271,12 +357,12 @@
   socket.on('recording_ready', (data) => {
     const logItem = document.getElementById(`log-${data.log_id}`);
     if (logItem) {
-      const container = logItem.querySelector('.flex-1');
+      const container = logItem.querySelector('.audio-container') || logItem.querySelector('.flex-1');
       if (container && !container.querySelector('audio')) {
         const audio = document.createElement('audio');
         audio.controls = true;
         audio.src = data.recording_url;
-        audio.className = "h-8 mt-2 w-full max-w-xs outline-none";
+        audio.className = "h-8 w-full max-w-xs outline-none";
         container.appendChild(audio);
       }
     }

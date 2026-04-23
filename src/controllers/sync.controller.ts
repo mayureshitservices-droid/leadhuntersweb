@@ -28,7 +28,7 @@ export class SyncController {
       // Update lead status
       await prisma.lead.update({
          where: { id: lead_id },
-         data: { status: status as any }
+         data: { status: status.toUpperCase() as any }
       });
 
       // Insert Call Log
@@ -38,6 +38,7 @@ export class SyncController {
             telecaller_id: req.user.id,
             duration_seconds: parseInt(duration_seconds, 10),
             status,
+            notes,
             recording_url: null,
          }
       });
@@ -49,7 +50,8 @@ export class SyncController {
          lead_phone: lead.phone,
          telecaller_name: req.user.name,
          duration: duration_seconds,
-         status
+         status,
+         notes
       });
 
       res.status(201).json({ success: true, log_id: callLog.id });

@@ -18,6 +18,13 @@ enum LeadStatus {
   ANSWERED
   MISSED
   BUSY
+  INTERESTED
+  ORDERED
+  BOOKED
+  REMIND_LATER
+  LOST
+  REJECTED
+  CANCELLED
 }
 
 model User {
@@ -78,6 +85,7 @@ model CallLog {
   duration_seconds Int
   recording_url    String?
   status           String
+  notes            String?
   created_at       DateTime @default(now())
 
   // Relations
