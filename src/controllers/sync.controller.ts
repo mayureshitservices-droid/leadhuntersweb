@@ -35,32 +35,47 @@ export class SyncController {
         });
       }
 
-      // Use upsert to handle multiple sync attempts for the same call
-      const localIdStr = local_log_id ? local_log_id.toString() : crypto.randomUUID();
+      // Robust fallback to prevent duplicates even if Android app is old and doesn't send local_log_id
+      let callLog;
       
-      const callLog = await prisma.callLog.upsert({
+      // Look for a recent call log for this exact lead and telecaller (within last 15 minutes)
+      const recentLog = await prisma.callLog.findFirst({
         where: {
-          telecaller_id_local_log_id: {
-            telecaller_id,
-            local_log_id: localIdStr
+          telecaller_id,
+          lead_id,
+          created_at: {
+            gte: new Date(Date.now() - 15 * 60 * 1000)
           }
         },
-        update: {
-          duration_seconds: parseInt(duration_seconds, 10) || 0,
-          call_status: call_status || 'UNKNOWN',
-          outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(' ', '_') : undefined,
-          notes: notes || undefined
-        },
-        create: {
-          lead_id,
-          telecaller_id,
-          local_log_id: localIdStr,
-          duration_seconds: parseInt(duration_seconds, 10) || 0,
-          call_status: call_status || 'UNKNOWN',
-          outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(' ', '_') : null,
-          notes: notes || null
-        }
+        orderBy: { created_at: 'desc' }
       });
+
+      if (recentLog) {
+        // Update the existing log instead of creating a duplicate
+        callLog = await prisma.callLog.update({
+          where: { id: recentLog.id },
+          data: {
+            duration_seconds: parseInt(duration_seconds, 10) || recentLog.duration_seconds,
+            call_status: call_status || recentLog.call_status,
+            outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(' ', '_') : recentLog.outcome,
+            notes: notes || recentLog.notes,
+            local_log_id: local_log_id ? local_log_id.toString() : recentLog.local_log_id
+          }
+        });
+      } else {
+        // Create a new log
+        callLog = await prisma.callLog.create({
+          data: {
+            lead_id,
+            telecaller_id,
+            local_log_id: local_log_id ? local_log_id.toString() : null,
+            duration_seconds: parseInt(duration_seconds, 10) || 0,
+            call_status: call_status || 'UNKNOWN',
+            outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(' ', '_') : null,
+            notes: notes || null
+          }
+        });
+      }
 
       // Emit to dashboard via Socket.IO
       io.to(`dashboard_${lead.business_owner_id}`).emit('new_call_log', {
