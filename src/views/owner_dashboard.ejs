@@ -255,20 +255,15 @@
                         <%= formattedDuration %>
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap">
-                        <% 
-                          let outcomeStatus = log.outcome && log.outcome !== 'PENDING' ? log.outcome : '—';
-                          let leadStatusClass = 'bg-gray-100 text-gray-800';
-                          if (outcomeStatus === '—') leadStatusClass = 'bg-gray-100 text-gray-400';
-                          else if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(outcomeStatus)) leadStatusClass = 'bg-green-100 text-green-800';
-                          else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(outcomeStatus)) leadStatusClass = 'bg-red-100 text-red-800';
-                          else if (outcomeStatus === 'REMIND_LATER') leadStatusClass = 'bg-blue-100 text-blue-800';
-                        %>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider <%= leadStatusClass %>">
-                          <%= outcomeStatus %>
-                        </span>
+                       <div class="text-sm font-bold text-gray-900 uppercase"><%= log.call_status %></div>
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap">
-                       <div class="text-sm font-bold text-gray-900 uppercase"><%= log.call_status %></div>
+                        <% 
+                          let outcomeStatus = log.outcome && log.outcome !== 'PENDING' ? log.outcome : '—';
+                        %>
+                        <div class="text-sm font-bold text-gray-900 uppercase">
+                          <%= outcomeStatus %>
+                        </div>
                      </td>
                      <td class="px-6 py-4">
                        <div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="<%= log.notes %>">
@@ -335,17 +330,7 @@
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
-  function getStatusBadge(status) {
-    let badgeClass = 'bg-gray-100 text-gray-800';
-    if (status === '—' || !status) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400">—</span>`;
-    
-    if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(status)) badgeClass = 'bg-green-100 text-green-800';
-    else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(status)) badgeClass = 'bg-red-100 text-red-800';
-    else if (status === 'REMIND_LATER') badgeClass = 'bg-blue-100 text-blue-800';
-    else if (status === 'PENDING') badgeClass = 'bg-amber-100 text-amber-800';
-    
-    return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${status}</span>`;
-  }
+  // Function no longer needed since we are using plain text for Outcome
 
   function updatePagination() {
     const tbody = document.getElementById('live-calls');
@@ -446,17 +431,36 @@
     const emptyState = document.getElementById('empty-state');
     if (emptyState) emptyState.remove();
 
-    // Update Answered Stat if call was successful
+    const existingRow = document.getElementById(`log-${data.log_id}`);
+    
+    if (existingRow) {
+      // Update existing row
+      const callStatusCell = existingRow.querySelectorAll('td')[4].querySelector('div');
+      const outcomeCell = existingRow.querySelectorAll('td')[5].querySelector('div');
+      const notesCell = existingRow.querySelectorAll('td')[6].querySelector('div');
+      
+      if (callStatusCell) callStatusCell.innerText = data.call_status;
+      if (outcomeCell) outcomeCell.innerText = data.outcome && data.outcome !== 'PENDING' ? data.outcome : '—';
+      if (notesCell) {
+        notesCell.innerText = data.notes || '—';
+        notesCell.title = data.notes || '';
+      }
+      
+      // If the outcome was just updated from pending, decrement pending and increment answered
+      if(data.outcome && data.outcome !== 'PENDING' && outcomeCell && outcomeCell.innerText === '—') {
+          const pendEl = document.getElementById('stat-pending');
+          const ansEl = document.getElementById('stat-answered');
+          if(pendEl && parseInt(pendEl.innerText) > 0) pendEl.innerText = parseInt(pendEl.innerText) - 1;
+          if(ansEl) ansEl.innerText = parseInt(ansEl.innerText) + 1;
+      }
+      
+      return;
+    }
+
+    // Update Answered Stat if call was successful (and it's a new row)
     if(data.call_status && data.call_status.toUpperCase() === 'ANSWERED') {
       const ansEl = document.getElementById('stat-answered');
       if(ansEl) ansEl.innerText = parseInt(ansEl.innerText) + 1;
-    }
-
-    // Decrement Pending Stat if an outcome was decided
-    if(data.outcome && data.outcome !== '—') {
-      const pendEl = document.getElementById('stat-pending');
-      // Note: This is an approximation since we don't know the previous status via socket
-      if(pendEl && parseInt(pendEl.innerText) > 0) pendEl.innerText = parseInt(pendEl.innerText) - 1;
     }
 
     const tr = document.createElement('tr');
@@ -472,9 +476,11 @@
       <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${data.lead_phone}</td>
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${timestamp}</td>
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${formatDuration(data.duration)}</td>
-      <td class="px-6 py-4 whitespace-nowrap lead-status-cell">${getStatusBadge(data.outcome && data.outcome !== 'PENDING' ? data.outcome : '—')}</td>
       <td class="px-6 py-4 whitespace-nowrap">
          <div class="text-sm font-bold text-gray-900 uppercase">${data.call_status}</div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap lead-status-cell">
+         <div class="text-sm font-bold text-gray-900 uppercase">${data.outcome && data.outcome !== 'PENDING' ? data.outcome : '—'}</div>
       </td>
       <td class="px-6 py-4">
         <div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="${data.notes || ''}">${data.notes || '—'}</div>

@@ -97,7 +97,7 @@ export class WebController {
      const stats = {
         total: await prisma.lead.count({ where: { business_owner_id: ownerId } }),
         pending: await prisma.lead.count({ where: { business_owner_id: ownerId, status: 'PENDING' } }),
-        answered: await prisma.lead.count({ where: { business_owner_id: ownerId, status: 'ANSWERED' } })
+        answered: await prisma.lead.count({ where: { business_owner_id: ownerId, status: { not: 'PENDING' } } })
      };
 
      let uploadMsg = null;
