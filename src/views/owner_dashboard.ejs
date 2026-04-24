@@ -447,7 +447,7 @@
     if (emptyState) emptyState.remove();
 
     // Update Answered Stat if call was successful
-    if(data.call_status === 'ANSWERED') {
+    if(data.call_status && data.call_status.toUpperCase() === 'ANSWERED') {
       const ansEl = document.getElementById('stat-answered');
       if(ansEl) ansEl.innerText = parseInt(ansEl.innerText) + 1;
     }
