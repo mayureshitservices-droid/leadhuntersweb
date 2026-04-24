@@ -20,30 +20,46 @@ export class SyncController {
          return res.status(403).json({ error: 'Forbidden' });
       }
 
-      const { lead_id, duration_seconds, call_status, outcome, notes } = req.body;
+      const { local_log_id, lead_id, duration_seconds, call_status, outcome, notes } = req.body;
+      const telecaller_id = (req as any).user.id;
 
       const lead = await prisma.lead.findUnique({ where: { id: lead_id } });
       if (!lead) return res.status(404).json({ error: 'Lead not found' });
 
       // Update lead status only if outcome is provided
-      if (outcome) {
+      if (outcome && outcome !== 'PENDING') {
+        const formattedOutcome = outcome.toUpperCase().replace(' ', '_');
         await prisma.lead.update({
            where: { id: lead_id },
-           data: { status: outcome.toUpperCase() as any }
+           data: { status: formattedOutcome as any }
         });
       }
 
-      // Insert Call Log
-      const callLog = await prisma.callLog.create({
-         data: {
-            lead_id,
-            telecaller_id: req.user.id,
-            duration_seconds: parseInt(duration_seconds, 10),
-            call_status: call_status || 'UNKNOWN',
-            outcome: outcome || null,
-            notes,
-            recording_url: null,
-         }
+      // Use upsert to handle multiple sync attempts for the same call
+      const localIdStr = local_log_id ? local_log_id.toString() : crypto.randomUUID();
+      
+      const callLog = await prisma.callLog.upsert({
+        where: {
+          telecaller_id_local_log_id: {
+            telecaller_id,
+            local_log_id: localIdStr
+          }
+        },
+        update: {
+          duration_seconds: parseInt(duration_seconds, 10) || 0,
+          call_status: call_status || 'UNKNOWN',
+          outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(' ', '_') : undefined,
+          notes: notes || undefined
+        },
+        create: {
+          lead_id,
+          telecaller_id,
+          local_log_id: localIdStr,
+          duration_seconds: parseInt(duration_seconds, 10) || 0,
+          call_status: call_status || 'UNKNOWN',
+          outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(' ', '_') : null,
+          notes: notes || null
+        }
       });
 
       // Emit to dashboard via Socket.IO

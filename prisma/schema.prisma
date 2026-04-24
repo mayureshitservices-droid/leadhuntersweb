@@ -87,9 +87,12 @@ model CallLog {
   call_status      String   @default("COMPLETED")
   outcome          String?
   notes            String?
-  created_at       DateTime @default(now())
+  local_log_id     String?      // ID from Android local DB
+  created_at       DateTime     @default(now())
 
   // Relations
   lead       Lead @relation(fields: [lead_id], references: [id], onDelete: Cascade)
   telecaller User @relation(fields: [telecaller_id], references: [id], onDelete: Cascade)
+
+  @@unique([telecaller_id, local_log_id])
 }
