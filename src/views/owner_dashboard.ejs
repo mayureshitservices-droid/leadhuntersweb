@@ -90,7 +90,6 @@
                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</th>
                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mobile No.</th>
                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Assigned To</th>
-                <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Added On</th>
               </tr>
             </thead>
@@ -110,10 +109,7 @@
                         <span class="text-gray-400 italic text-[10px]">Unassigned</span>
                       <% } %>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-bold text-gray-900 uppercase"><%= lead.status %></div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium"><%= new Date(lead.created_at).toLocaleDateString() %></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium"><%= new Date(lead.created_at).toLocaleDateString('en-IN') %></td>
                   </tr>
                 <% }); %>
               <% } else { %>
@@ -208,7 +204,7 @@
           </div>
           <div>
             <p class="text-sm font-medium text-gray-500 truncate">Pending Calls</p>
-            <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900"><%= stats.pending %></p>
+            <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900" id="stat-pending"><%= stats.pending %></p>
           </div>
         </div>
 
@@ -248,7 +244,7 @@
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium"><%= log.lead.phone %></td>
                      <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">
-                        <%= new Date(log.created_at).toLocaleString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) %>
+                        <%= new Date(log.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true }) %>
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">
                         <% 
@@ -260,9 +256,9 @@
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap">
                         <% 
-                          let outcomeStatus = log.outcome || 'PENDING';
+                          let outcomeStatus = log.outcome && log.outcome !== 'PENDING' ? log.outcome : '—';
                           let leadStatusClass = 'bg-gray-100 text-gray-800';
-                          if (outcomeStatus === 'PENDING') leadStatusClass = 'bg-amber-100 text-amber-800';
+                          if (outcomeStatus === '—') leadStatusClass = 'bg-gray-100 text-gray-400';
                           else if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(outcomeStatus)) leadStatusClass = 'bg-green-100 text-green-800';
                           else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(outcomeStatus)) leadStatusClass = 'bg-red-100 text-red-800';
                           else if (outcomeStatus === 'REMIND_LATER') leadStatusClass = 'bg-blue-100 text-blue-800';
@@ -341,6 +337,8 @@
 
   function getStatusBadge(status) {
     let badgeClass = 'bg-gray-100 text-gray-800';
+    if (status === '—' || !status) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-400">—</span>`;
+    
     if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(status)) badgeClass = 'bg-green-100 text-green-800';
     else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(status)) badgeClass = 'bg-red-100 text-red-800';
     else if (status === 'REMIND_LATER') badgeClass = 'bg-blue-100 text-blue-800';
@@ -448,17 +446,24 @@
     const emptyState = document.getElementById('empty-state');
     if (emptyState) emptyState.remove();
 
-    // Increment Answered Stat if answered/positive
-    if(['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(data.status)) {
+    // Update Answered Stat if call was successful
+    if(data.call_status === 'ANSWERED') {
       const ansEl = document.getElementById('stat-answered');
       if(ansEl) ansEl.innerText = parseInt(ansEl.innerText) + 1;
+    }
+
+    // Decrement Pending Stat if an outcome was decided
+    if(data.outcome && data.outcome !== '—') {
+      const pendEl = document.getElementById('stat-pending');
+      // Note: This is an approximation since we don't know the previous status via socket
+      if(pendEl && parseInt(pendEl.innerText) > 0) pendEl.innerText = parseInt(pendEl.innerText) - 1;
     }
 
     const tr = document.createElement('tr');
     tr.id = `log-${data.log_id}`;
     tr.className = "log-row hover:bg-gray-50 transition-colors animate-fade-in-up";
     
-    const timestamp = new Date().toLocaleString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true });
 
     tr.innerHTML = `
       <td class="px-6 py-4 whitespace-nowrap">
@@ -467,7 +472,7 @@
       <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${data.lead_phone}</td>
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${timestamp}</td>
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${formatDuration(data.duration)}</td>
-      <td class="px-6 py-4 whitespace-nowrap lead-status-cell">${getStatusBadge(data.outcome || 'PENDING')}</td>
+      <td class="px-6 py-4 whitespace-nowrap lead-status-cell">${getStatusBadge(data.outcome && data.outcome !== 'PENDING' ? data.outcome : '—')}</td>
       <td class="px-6 py-4 whitespace-nowrap">
          <div class="text-sm font-bold text-gray-900 uppercase">${data.call_status}</div>
       </td>
