@@ -228,8 +228,8 @@
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mobile</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timestamp</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Duration</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Outcome</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Call Status</th>
+                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Outcome</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Remarks</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Telecaller</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Recording</th>
@@ -255,14 +255,14 @@
                         <%= formattedDuration %>
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap">
-                       <div class="text-sm font-bold text-gray-900 uppercase"><%= log.call_status %></div>
+                       <div class="text-sm font-bold text-gray-900 capitalize"><%= log.call_status ? log.call_status.toLowerCase() : '' %></div>
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap">
                         <% 
                           let outcomeStatus = log.outcome && log.outcome !== 'PENDING' ? log.outcome : '—';
                         %>
-                        <div class="text-sm font-bold text-gray-900 uppercase">
-                          <%= outcomeStatus %>
+                        <div class="text-sm font-bold text-gray-900 capitalize">
+                          <%= outcomeStatus !== '—' ? outcomeStatus.toLowerCase().replace(/_/g, ' ') : '—' %>
                         </div>
                      </td>
                      <td class="px-6 py-4">
@@ -439,8 +439,14 @@
       const outcomeCell = existingRow.querySelectorAll('td')[5].querySelector('div');
       const notesCell = existingRow.querySelectorAll('td')[6].querySelector('div');
       
-      if (callStatusCell) callStatusCell.innerText = data.call_status;
-      if (outcomeCell) outcomeCell.innerText = data.outcome && data.outcome !== 'PENDING' ? data.outcome : '—';
+      if (callStatusCell) callStatusCell.innerText = data.call_status ? data.call_status.toLowerCase() : '';
+      if (callStatusCell) callStatusCell.className = "text-sm font-bold text-gray-900 capitalize";
+      
+      if (outcomeCell) {
+        const outText = data.outcome && data.outcome !== 'PENDING' ? data.outcome : '—';
+        outcomeCell.innerText = outText !== '—' ? outText.toLowerCase().replace(/_/g, ' ') : '—';
+        outcomeCell.className = "text-sm font-bold text-gray-900 capitalize";
+      }
       if (notesCell) {
         notesCell.innerText = data.notes || '—';
         notesCell.title = data.notes || '';
@@ -477,10 +483,10 @@
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${timestamp}</td>
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${formatDuration(data.duration)}</td>
       <td class="px-6 py-4 whitespace-nowrap">
-         <div class="text-sm font-bold text-gray-900 uppercase">${data.call_status}</div>
+         <div class="text-sm font-bold text-gray-900 capitalize">${data.call_status ? data.call_status.toLowerCase() : ''}</div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap lead-status-cell">
-         <div class="text-sm font-bold text-gray-900 uppercase">${data.outcome && data.outcome !== 'PENDING' ? data.outcome : '—'}</div>
+         <div class="text-sm font-bold text-gray-900 capitalize">${data.outcome && data.outcome !== 'PENDING' ? data.outcome.toLowerCase().replace(/_/g, ' ') : '—'}</div>
       </td>
       <td class="px-6 py-4">
         <div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="${data.notes || ''}">${data.notes || '—'}</div>
