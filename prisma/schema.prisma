@@ -84,7 +84,8 @@ model CallLog {
   telecaller_id    String
   duration_seconds Int
   recording_url    String?
-  status           String
+  call_status      String   @default("COMPLETED")
+  outcome          String?
   notes            String?
   created_at       DateTime @default(now())
 

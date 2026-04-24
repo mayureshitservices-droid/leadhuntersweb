@@ -232,8 +232,8 @@
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mobile</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timestamp</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Duration</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lead Status</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Outcome</th>
+                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Call Status</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Remarks</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Telecaller</th>
                  <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Recording</th>
@@ -260,18 +260,19 @@
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap">
                         <% 
+                          let outcomeStatus = log.outcome || 'PENDING';
                           let leadStatusClass = 'bg-gray-100 text-gray-800';
-                          if (log.lead.status === 'PENDING') leadStatusClass = 'bg-amber-100 text-amber-800';
-                          else if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(log.lead.status)) leadStatusClass = 'bg-green-100 text-green-800';
-                          else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(log.lead.status)) leadStatusClass = 'bg-red-100 text-red-800';
-                          else if (log.lead.status === 'REMIND_LATER') leadStatusClass = 'bg-blue-100 text-blue-800';
+                          if (outcomeStatus === 'PENDING') leadStatusClass = 'bg-amber-100 text-amber-800';
+                          else if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(outcomeStatus)) leadStatusClass = 'bg-green-100 text-green-800';
+                          else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(outcomeStatus)) leadStatusClass = 'bg-red-100 text-red-800';
+                          else if (outcomeStatus === 'REMIND_LATER') leadStatusClass = 'bg-blue-100 text-blue-800';
                         %>
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider <%= leadStatusClass %>">
-                          <%= log.lead.status %>
+                          <%= outcomeStatus %>
                         </span>
                      </td>
                      <td class="px-6 py-4 whitespace-nowrap">
-                       <div class="text-sm font-bold text-gray-900 uppercase"><%= log.status %></div>
+                       <div class="text-sm font-bold text-gray-900 uppercase"><%= log.call_status %></div>
                      </td>
                      <td class="px-6 py-4">
                        <div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="<%= log.notes %>">
@@ -466,9 +467,9 @@
       <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${data.lead_phone}</td>
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${timestamp}</td>
       <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${formatDuration(data.duration)}</td>
-      <td class="px-6 py-4 whitespace-nowrap lead-status-cell">${getStatusBadge(data.status)}</td>
+      <td class="px-6 py-4 whitespace-nowrap lead-status-cell">${getStatusBadge(data.outcome || 'PENDING')}</td>
       <td class="px-6 py-4 whitespace-nowrap">
-         <div class="text-sm font-bold text-gray-900 uppercase">${data.status}</div>
+         <div class="text-sm font-bold text-gray-900 uppercase">${data.call_status}</div>
       </td>
       <td class="px-6 py-4">
         <div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="${data.notes || ''}">${data.notes || '—'}</div>

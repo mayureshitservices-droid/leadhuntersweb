@@ -20,16 +20,18 @@ export class SyncController {
          return res.status(403).json({ error: 'Forbidden' });
       }
 
-      const { lead_id, duration_seconds, status, notes } = req.body;
+      const { lead_id, duration_seconds, call_status, outcome, notes } = req.body;
 
       const lead = await prisma.lead.findUnique({ where: { id: lead_id } });
       if (!lead) return res.status(404).json({ error: 'Lead not found' });
 
-      // Update lead status
-      await prisma.lead.update({
-         where: { id: lead_id },
-         data: { status: status.toUpperCase() as any }
-      });
+      // Update lead status only if outcome is provided
+      if (outcome) {
+        await prisma.lead.update({
+           where: { id: lead_id },
+           data: { status: outcome.toUpperCase() as any }
+        });
+      }
 
       // Insert Call Log
       const callLog = await prisma.callLog.create({
@@ -37,7 +39,8 @@ export class SyncController {
             lead_id,
             telecaller_id: req.user.id,
             duration_seconds: parseInt(duration_seconds, 10),
-            status,
+            call_status: call_status || 'UNKNOWN',
+            outcome: outcome || null,
             notes,
             recording_url: null,
          }
@@ -50,7 +53,8 @@ export class SyncController {
          lead_phone: lead.phone,
          telecaller_name: req.user.name,
          duration: duration_seconds,
-         status,
+         call_status: call_status || 'UNKNOWN',
+         outcome: outcome || '—',
          notes
       });
 

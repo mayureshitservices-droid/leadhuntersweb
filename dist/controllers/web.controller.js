@@ -132,6 +132,19 @@ export class WebController {
             take: 100,
             include: { telecaller: { select: { name: true, device_alias: true } } }
         });
+        const callLogs = await prisma.callLog.findMany({
+            where: {
+                lead: {
+                    business_owner_id: ownerId
+                }
+            },
+            include: {
+                lead: { select: { name: true, phone: true } },
+                telecaller: { select: { name: true, device_alias: true } }
+            },
+            orderBy: { created_at: 'desc' },
+            take: 50
+        });
         res.render('owner_dashboard', {
             user,
             stats,
@@ -140,7 +153,8 @@ export class WebController {
             assignMsg,
             assignError,
             leads,
-            telecallers
+            telecallers,
+            callLogs
         });
     };
     postUploadLeads = async (req, res) => {
