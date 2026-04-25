@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import common from 'oci-common';
 import os from 'oci-objectstorage';
 const { OCI_USER_OCID, OCI_TENANCY_OCID, OCI_FINGERPRINT, OCI_PRIVATE_KEY, OCI_REGION } = process.env;

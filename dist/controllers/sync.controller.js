@@ -108,7 +108,7 @@ export class SyncController {
             }
             try {
                 const logId = req.body.log_id;
-                const bucketName = process.env.OCI_BUCKET_NAME || 'leadHuntersRec';
+                const bucketName = process.env.OCI_BUCKET_NAME || 'spenca-telecrm-recordings';
                 const namespace = process.env.OCI_NAMESPACE || 'bmdqyv5rml4m';
                 const ext = path.extname(file.originalname) || '.m4a';
                 const objectName = `records/${logId}_${crypto.randomBytes(4).toString('hex')}${ext}`;
@@ -143,9 +143,9 @@ export class SyncController {
             }
             catch (error) {
                 console.error('OCI Upload Error:', error);
-                if (file)
-                    fs.unlinkSync(file.path);
-                res.status(500).json({ error: 'Storage Error' });
+                if (req.file)
+                    fs.unlinkSync(req.file.path);
+                res.status(500).json({ error: `Storage Error: ${error.message || 'Unknown'}` });
             }
         });
     };

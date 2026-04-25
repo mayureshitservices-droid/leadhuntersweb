@@ -1,4 +1,6 @@
+import 'dotenv/config';
 import common from 'oci-common';
+
 import os from 'oci-objectstorage';
 
 const {
