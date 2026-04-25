@@ -12,7 +12,14 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+import { createClient } from 'redis';
+import { RedisStore } from 'connect-redis';
+const redisClient = createClient({
+    url: process.env.REDIS_URL || 'redis://redis:6379'
+});
+redisClient.connect().catch(console.error);
 app.use(session({
+    store: new RedisStore({ client: redisClient, prefix: "leadhunters:" }),
     secret: process.env.SESSION_SECRET || 'secret',
     resave: false,
     saveUninitialized: false,
