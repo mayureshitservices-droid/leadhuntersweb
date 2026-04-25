@@ -23,8 +23,13 @@ export class SyncController {
       const { local_log_id, lead_id, duration_seconds, call_status, outcome, notes } = req.body;
       const telecaller_id = req.user!.id;
 
+      console.log(`[SyncCallLog] Received: local_log_id=${local_log_id}, lead_id=${lead_id}, call_status=${call_status}, outcome=${outcome}`);
+
       const lead = await prisma.lead.findUnique({ where: { id: lead_id } });
-      if (!lead) return res.status(404).json({ error: 'Lead not found' });
+      if (!lead) {
+        console.error(`[SyncCallLog] Lead NOT FOUND: ${lead_id}`);
+        return res.status(404).json({ error: 'Lead not found' });
+      }
 
       // Update lead status only if outcome is provided
       if (outcome && outcome !== 'PENDING') {
@@ -35,7 +40,8 @@ export class SyncController {
         });
       }
 
-      // Look for an existing log with this local_log_id first (Global check)
+      // ONLY match on local_log_id — never fall back to time-window search
+      // (the 15-min fallback was causing recordings to attach to the wrong row)
       let existingLog = null;
       if (local_log_id) {
         existingLog = await prisma.callLog.findFirst({
@@ -44,20 +50,9 @@ export class SyncController {
             local_log_id: local_log_id.toString()
           }
         });
-      }
-
-      // If no local_log_id match, look for a recent log (last 15 mins) to prevent rapid duplicates
-      if (!existingLog) {
-        existingLog = await prisma.callLog.findFirst({
-          where: {
-            telecaller_id,
-            lead_id,
-            created_at: {
-              gte: new Date(Date.now() - 15 * 60 * 1000)
-            }
-          },
-          orderBy: { created_at: 'desc' }
-        });
+        console.log(`[SyncCallLog] local_log_id lookup result: ${existingLog ? `FOUND id=${existingLog.id}` : 'NOT FOUND → will create new'}`);
+      } else {
+        console.warn(`[SyncCallLog] No local_log_id provided — always creating new log`);
       }
 
       let callLog;
@@ -73,6 +68,7 @@ export class SyncController {
             local_log_id: local_log_id ? local_log_id.toString() : existingLog.local_log_id
           }
         });
+        console.log(`[SyncCallLog] Updated existing log id=${callLog.id}`);
       } else {
         // Create a new log
         callLog = await prisma.callLog.create({
@@ -86,6 +82,7 @@ export class SyncController {
             notes: notes || null
           }
         });
+        console.log(`[SyncCallLog] Created NEW log id=${callLog.id}`);
       }
 
       // Emit to dashboard via Socket.IO
@@ -102,10 +99,11 @@ export class SyncController {
 
       res.status(201).json({ success: true, log_id: callLog.id });
     } catch (error) {
-      console.error(error);
+      console.error('[SyncCallLog] ERROR:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   };
+
 
   syncRecording = (req: AuthRequest, res: Response) => {
     upload(req, res, async (err) => {
@@ -119,6 +117,8 @@ export class SyncController {
 
       try {
         const logId = req.body.log_id;
+        console.log(`[SyncRecording] Received recording for log_id=${logId}, file=${req.file?.originalname}, size=${req.file?.size} bytes`);
+
         const bucketName = (process.env.OCI_BUCKET_NAME || 'spenca-telecrm-recordings').replace(/^"|"$/g, '');
         const namespace = (process.env.OCI_NAMESPACE || 'bmdqyv5rml4m').replace(/^"|"$/g, '');
         const region = (process.env.OCI_REGION || 'ap-mumbai-1').replace(/^"|"$/g, '');
