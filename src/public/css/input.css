@@ -21,6 +21,10 @@
   }
 }
 
+[x-cloak] {
+  display: none !important;
+}
+
 .btn-primary {
-  @apply bg-primary text-white font-medium py-2 px-4 rounded-lg shadow-md hover:-translate-y-0.5 transition-all focus:ring-4 focus:ring-container outline-none;
+  @apply bg-primary text-white font-bold py-2 px-6 rounded-xl shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all focus:ring-4 focus:ring-container outline-none text-sm;
 }
