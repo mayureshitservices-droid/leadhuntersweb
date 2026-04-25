@@ -20,7 +20,8 @@ try {
       OCI_TENANCY_OCID,
       OCI_USER_OCID,
       OCI_FINGERPRINT || '',
-      OCI_PRIVATE_KEY.replace(/\\n/g, '\n'), // Fix escaped newlines in env
+      OCI_PRIVATE_KEY.replace(/^"|"$/g, '').replace(/\\n/g, '\n'), // Fix escaped newlines and Docker quotes
+
       null,
       common.Region.fromRegionId(OCI_REGION)
     );
