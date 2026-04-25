@@ -2,12 +2,13 @@ import 'dotenv/config';
 import common from 'oci-common';
 import os from 'oci-objectstorage';
 const { OCI_USER_OCID, OCI_TENANCY_OCID, OCI_FINGERPRINT, OCI_PRIVATE_KEY, OCI_REGION } = process.env;
+const cleanEnv = (val) => val ? val.replace(/^"|"$/g, '') : '';
 let provider = null;
 let client = null;
 try {
     if (OCI_USER_OCID && OCI_TENANCY_OCID && OCI_PRIVATE_KEY && OCI_REGION) {
-        provider = new common.SimpleAuthenticationDetailsProvider(OCI_TENANCY_OCID, OCI_USER_OCID, OCI_FINGERPRINT || '', OCI_PRIVATE_KEY.replace(/^"|"$/g, '').replace(/\\n/g, '\n'), // Fix escaped newlines and Docker quotes
-        null, common.Region.fromRegionId(OCI_REGION));
+        provider = new common.SimpleAuthenticationDetailsProvider(cleanEnv(OCI_TENANCY_OCID), cleanEnv(OCI_USER_OCID), cleanEnv(OCI_FINGERPRINT), cleanEnv(OCI_PRIVATE_KEY).replace(/\\n/g, '\n'), // Fix escaped newlines and Docker quotes
+        null, common.Region.fromRegionId(cleanEnv(OCI_REGION)));
         client = new os.ObjectStorageClient({ authenticationDetailsProvider: provider });
     }
     else {

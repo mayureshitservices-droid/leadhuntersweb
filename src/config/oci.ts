@@ -11,19 +11,20 @@ const {
   OCI_REGION
 } = process.env;
 
+const cleanEnv = (val?: string) => val ? val.replace(/^"|"$/g, '') : '';
+
 let provider: common.AuthenticationDetailsProvider | null = null;
 let client: os.ObjectStorageClient | null = null;
 
 try {
   if (OCI_USER_OCID && OCI_TENANCY_OCID && OCI_PRIVATE_KEY && OCI_REGION) {
     provider = new common.SimpleAuthenticationDetailsProvider(
-      OCI_TENANCY_OCID,
-      OCI_USER_OCID,
-      OCI_FINGERPRINT || '',
-      OCI_PRIVATE_KEY.replace(/^"|"$/g, '').replace(/\\n/g, '\n'), // Fix escaped newlines and Docker quotes
-
+      cleanEnv(OCI_TENANCY_OCID),
+      cleanEnv(OCI_USER_OCID),
+      cleanEnv(OCI_FINGERPRINT),
+      cleanEnv(OCI_PRIVATE_KEY).replace(/\\n/g, '\n'), // Fix escaped newlines and Docker quotes
       null,
-      common.Region.fromRegionId(OCI_REGION)
+      common.Region.fromRegionId(cleanEnv(OCI_REGION))
     );
 
     client = new os.ObjectStorageClient({ authenticationDetailsProvider: provider });

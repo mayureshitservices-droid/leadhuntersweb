@@ -108,8 +108,9 @@ export class SyncController {
             }
             try {
                 const logId = req.body.log_id;
-                const bucketName = process.env.OCI_BUCKET_NAME || 'spenca-telecrm-recordings';
-                const namespace = process.env.OCI_NAMESPACE || 'bmdqyv5rml4m';
+                const bucketName = (process.env.OCI_BUCKET_NAME || 'spenca-telecrm-recordings').replace(/^"|"$/g, '');
+                const namespace = (process.env.OCI_NAMESPACE || 'bmdqyv5rml4m').replace(/^"|"$/g, '');
+                const region = (process.env.OCI_REGION || 'ap-mumbai-1').replace(/^"|"$/g, '');
                 const ext = path.extname(file.originalname) || '.m4a';
                 const objectName = `records/${logId}_${crypto.randomBytes(4).toString('hex')}${ext}`;
                 // Setup direct stream
@@ -128,7 +129,7 @@ export class SyncController {
                 };
                 const response = await ociClient.putObject(putObjectRequest);
                 fs.unlinkSync(file.path); // cleanup
-                const recordingUrl = `https://objectstorage.${process.env.OCI_REGION}.oraclecloud.com/n/${namespace}/b/${bucketName}/o/${encodeURIComponent(objectName)}`;
+                const recordingUrl = `https://objectstorage.${region}.oraclecloud.com/n/${namespace}/b/${bucketName}/o/${encodeURIComponent(objectName)}`;
                 const updatedLog = await prisma.callLog.update({
                     where: { id: logId },
                     data: { recording_url: recordingUrl },
