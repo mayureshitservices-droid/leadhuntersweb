@@ -176,9 +176,9 @@
                callLogs.forEach(function(log) { 
                  const logDate = new Date(log.created_at).toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
                  if (logDate !== lastDate) { lastDate = logDate; %>
-             <div class="date-header px-4 py-2 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-400 sticky top-0 z-10 border-b border-gray-100 uppercase tracking-[0.2em] mb-4"><%= logDate %></div>
+              <div class="date-header px-4 py-3 bg-white/95 backdrop-blur-md text-[10px] font-bold text-gray-400 sticky top-0 z-10 border-b border-gray-100 uppercase tracking-[0.2em] mb-6 mt-10 first:mt-0"><%= logDate %></div>
           <% } %>
-             <div id="card-log-<%= log.id %>" class="activity-card bg-white p-4 mb-5 shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-100 rounded-2xl mx-0 animate-fade-in-up">
+              <div id="card-log-<%= log.id %>" class="activity-card bg-white p-5 mb-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)] border border-gray-100 rounded-2xl mx-3 animate-fade-in-up">
                 <!-- Header: Info (No redundant badge) -->
                 <div class="mb-3">
                   <h4 class="text-lg font-bold text-gray-900 leading-tight tracking-tight"><%= log.lead.name %></h4>
@@ -394,14 +394,14 @@
     let todayHeader = Array.from(cardList.querySelectorAll('.date-header')).find(h => h.innerText.trim() === today);
     if(!todayHeader) {
        todayHeader = document.createElement('div');
-       todayHeader.className = "date-header px-4 py-2 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-400 sticky top-0 z-10 border-b border-gray-100 uppercase tracking-[0.2em] mb-2";
+       todayHeader.className = "date-header px-4 py-3 bg-white/95 backdrop-blur-md text-[10px] font-bold text-gray-400 sticky top-0 z-10 border-b border-gray-100 uppercase tracking-[0.2em] mb-6 mt-10 first:mt-0";
        todayHeader.innerText = today;
        cardList.prepend(todayHeader);
     }
 
     const card = document.createElement('div');
     card.id = `card-log-${data.log_id}`;
-    card.className = "activity-card bg-white p-4 mb-5 shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-gray-100 rounded-2xl mx-0 animate-fade-in-up";
+    card.className = "activity-card bg-white p-5 mb-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)] border border-gray-100 rounded-2xl mx-3 animate-fade-in-up";
     const timeStr = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true });
     
     card.innerHTML = `
