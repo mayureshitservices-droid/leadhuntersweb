@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon --watch src --ext ts,ejs --exec \"tsx src/index.ts\"",
-    "build": "tsc",
+    "tailwind:build": "tailwindcss -i src/public/css/input.css -o src/public/css/tailwind.css",
+    "tailwind:watch": "tailwindcss -i src/public/css/input.css -o src/public/css/tailwind.css --watch",
+    "build": "npm run tailwind:build && tsc",
     "start": "node dist/index.js",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
