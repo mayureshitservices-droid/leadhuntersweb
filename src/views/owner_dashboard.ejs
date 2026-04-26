@@ -2,13 +2,13 @@
 
 <div class="animate-fade-in-up">
     <!-- Header Section -->
-    <div class="mb-8 flex md:flex-row flex-col justify-between md:items-end">
+    <div class="mb-8 flex md:flex-row flex-col justify-between md:items-end px-2 sm:px-0">
       <div>
         <h2 class="text-3xl font-bold tracking-tight text-gray-900 border-b-4 border-primary inline-block pb-1">Owner Dashboard</h2>
         <p class="text-sm font-medium text-gray-500 mt-2">Welcome back, <%= user.name %></p>
       </div>
     </div>
-  <div class="px-4 py-4 sm:px-0">
+  <div class="px-0 py-4 sm:px-0">
     <!-- Actions Section -->
     <div x-show="activeTab === 'upload'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="space-y-8">
       
@@ -96,14 +96,14 @@
           <div id="leads-cards-container" class="md:hidden divide-y divide-gray-100">
              <% if (locals.leads && leads.length > 0) { %>
                <% leads.forEach(function(lead) { %>
-                 <div class="lead-card p-4 hover:bg-gray-50 transition-colors">
+                 <div class="lead-card p-5 hover:bg-gray-50 transition-colors">
                    <div class="flex justify-between items-start">
                      <div>
-                       <h4 class="text-sm font-bold text-gray-900"><%= lead.name %></h4>
-                       <p class="text-[11px] text-gray-500 font-medium"><%= lead.phone %></p>
+                       <h4 class="text-base font-bold text-gray-900"><%= lead.name %></h4>
+                       <p class="text-sm text-gray-500 font-medium mt-1"><%= lead.phone %></p>
                      </div>
                      <% if (lead.telecaller) { %>
-                       <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"><%= lead.telecaller.device_alias || lead.telecaller.name %></span>
+                       <span class="text-[10px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider"><%= lead.telecaller.device_alias || lead.telecaller.name %></span>
                      <% } %>
                    </div>
                  </div>
@@ -178,36 +178,36 @@
                  if (logDate !== lastDate) { lastDate = logDate; %>
              <div class="date-header px-4 py-2 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-400 sticky top-0 z-10 border-b border-gray-100 uppercase tracking-[0.2em] mb-2"><%= logDate %></div>
           <% } %>
-             <div id="card-log-<%= log.id %>" class="activity-card bg-white p-4 mb-3 shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-gray-100 rounded-xl mx-2 animate-fade-in-up">
+             <div id="card-log-<%= log.id %>" class="activity-card bg-white p-4 mb-3 shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-gray-100 rounded-2xl mx-0 animate-fade-in-up">
                 <!-- Header: Info (No redundant badge) -->
-                <div class="mb-4">
-                  <h4 class="text-base font-bold text-gray-900 leading-tight tracking-tight"><%= log.lead.name %></h4>
-                  <p class="text-[11px] text-gray-400 font-bold mt-0.5 tracking-tight"><%= log.lead.phone %></p>
+                <div class="mb-3">
+                  <h4 class="text-lg font-bold text-gray-900 leading-tight tracking-tight"><%= log.lead.name %></h4>
+                  <p class="text-sm text-gray-500 font-bold mt-0.5 tracking-tight"><%= log.lead.phone %></p>
                 </div>
 
                 <!-- Stats Row (Compact) -->
-                <div class="grid grid-cols-3 gap-0.5 py-3 border-y border-gray-50 mb-4">
+                <div class="grid grid-cols-3 gap-0.5 py-3 border-y border-gray-100 mb-3">
                   <div class="flex flex-col items-center text-center">
-                    <p class="text-[8px] text-gray-400 font-bold uppercase tracking-tighter mb-0.5">Time</p>
-                    <p class="text-[11px] text-gray-800 font-bold"><%= new Date(log.created_at).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true }) %></p>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Time</p>
+                    <p class="text-sm text-gray-800 font-bold"><%= new Date(log.created_at).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true }) %></p>
                   </div>
-                  <div class="flex flex-col items-center text-center border-x border-gray-50 px-0.5">
-                    <p class="text-[8px] text-gray-400 font-bold uppercase tracking-tighter mb-0.5">Duration</p>
-                    <p class="text-[11px] text-gray-800 font-bold"><%= Math.floor(log.duration_seconds / 60).toString().padStart(2, '0') %>:<%= (log.duration_seconds % 60).toString().padStart(2, '0') %></p>
+                  <div class="flex flex-col items-center text-center border-x border-gray-100 px-1">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Duration</p>
+                    <p class="text-sm text-gray-800 font-bold"><%= Math.floor(log.duration_seconds / 60).toString().padStart(2, '0') %>:<%= (log.duration_seconds % 60).toString().padStart(2, '0') %></p>
                   </div>
                   <div class="flex flex-col items-center text-center">
-                    <p class="text-[8px] text-gray-400 font-bold uppercase tracking-tighter mb-0.5">Status</p>
-                    <p class="text-[11px] text-emerald-600 font-bold uppercase tracking-tighter"><%= log.call_status ? log.call_status.toLowerCase() : 'Answered' %></p>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Status</p>
+                    <p class="text-sm text-emerald-600 font-bold uppercase tracking-wide"><%= log.call_status ? log.call_status.toLowerCase() : 'Answered' %></p>
                   </div>
                 </div>
 
                 <!-- Remarks Section (Reduced Height) -->
                 <% if (log.notes) { %>
-                  <div class="flex gap-2.5 mb-4 px-1">
+                  <div class="flex gap-3 mb-4 px-1">
                     <div class="text-primary opacity-30 shrink-0">
-                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 18.3137 20.3307 21 17.017 21H14.017ZM1.017 21L1.017 18C1.017 16.8954 1.91243 16 3.017 16H6.017C6.56928 16 7.017 15.5523 7.017 15V9C7.017 8.44772 6.56928 8 6.017 8H3.017C1.91243 8 1.017 7.10457 1.017 6V5C1.017 3.89543 1.91243 3 3.017 3H6.017C8.22614 3 10.017 4.79086 10.017 7V15C10.017 18.3137 7.33072 21 4.017 21H1.017Z"/></svg>
+                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 18.3137 20.3307 21 17.017 21H14.017ZM1.017 21L1.017 18C1.017 16.8954 1.91243 16 3.017 16H6.017C6.56928 16 7.017 15.5523 7.017 15V9C7.017 8.44772 6.56928 8 6.017 8H3.017C1.91243 8 1.017 7.10457 1.017 6V5C1.017 3.89543 1.91243 3 3.017 3H6.017C8.22614 3 10.017 4.79086 10.017 7V15C10.017 18.3137 7.33072 21 4.017 21H1.017Z"/></svg>
                     </div>
-                    <p class="text-[13px] text-gray-700 font-medium leading-normal italic line-clamp-3"><%= log.notes %></p>
+                    <p class="text-sm text-gray-700 font-medium leading-relaxed italic line-clamp-3"><%= log.notes %></p>
                   </div>
                 <% } %>
 
@@ -215,27 +215,28 @@
 
                 <!-- Footer Row (Compact) -->
                 <div class="flex items-center justify-between mb-3 px-1">
-                  <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-50 text-emerald-600 border border-emerald-100 font-bold text-[10px] shadow-sm">
-                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                  <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-emerald-600 border border-emerald-100 font-bold text-xs shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                     <%= (log.outcome && log.outcome !== 'PENDING' ? log.outcome : 'Interested').toLowerCase().replace(/_/g, ' ') %>
                   </div>
-                  <div class="flex items-center gap-1 text-gray-400">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-tight"><%= log.telecaller.device_alias || log.telecaller.name %></span>
+                  <div class="flex items-center gap-1.5 text-gray-400">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-tight"><%= log.telecaller.device_alias || log.telecaller.name %></span>
                   </div>
                 </div>
 
                 <!-- Audio Player row (Explicit Visibility) -->
                 <div class="audio-container w-full pt-1">
                    <% if (log.recording_url) { %>
-                     <audio controls src="<%= log.recording_url %>" class="h-9 w-full outline-none bg-gray-50 rounded-lg"></audio>
+                     <audio controls src="<%= log.recording_url %>" class="h-10 w-full outline-none bg-gray-50 rounded-xl"></audio>
                    <% } else { %>
-                     <div class="h-9 w-full bg-gray-50 rounded-lg flex items-center justify-center border border-dashed border-gray-200">
-                        <span class="text-[9px] text-gray-400 font-medium italic">Recording pending sync</span>
+                     <div class="h-10 w-full bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200">
+                        <span class="text-xs text-gray-400 font-medium italic">Recording pending sync</span>
                      </div>
                    <% } %>
                 </div>
              </div>
+
           <% }); } %>
        </div>
        
@@ -400,26 +401,26 @@
 
     const card = document.createElement('div');
     card.id = `card-log-${data.log_id}`;
-    card.className = "activity-card bg-white p-4 mb-3 shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-gray-100 rounded-xl mx-2 animate-fade-in-up";
+    card.className = "activity-card bg-white p-4 mb-3 shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-gray-100 rounded-2xl mx-0 animate-fade-in-up";
     const timeStr = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true });
     
     card.innerHTML = `
-      <div class="mb-4">
-        <h4 class="text-base font-bold text-gray-900 leading-tight tracking-tight">${data.lead_name}</h4>
-        <p class="text-[11px] text-gray-400 font-bold mt-0.5 tracking-tight">${data.lead_phone}</p>
+      <div class="mb-3">
+        <h4 class="text-lg font-bold text-gray-900 leading-tight tracking-tight">${data.lead_name}</h4>
+        <p class="text-sm text-gray-500 font-bold mt-0.5 tracking-tight">${data.lead_phone}</p>
       </div>
-      <div class="grid grid-cols-3 gap-0.5 py-3 border-y border-gray-50 mb-4">
-        <div class="flex flex-col items-center text-center"><p class="text-[8px] text-gray-400 font-bold uppercase tracking-tighter mb-0.5">Time</p><p class="text-[11px] text-gray-800 font-bold">${timeStr}</p></div>
-        <div class="flex flex-col items-center text-center border-x border-gray-50 px-0.5"><p class="text-[8px] text-gray-400 font-bold uppercase tracking-tighter mb-0.5">Duration</p><p class="text-[11px] text-gray-800 font-bold">${formatDuration(data.duration)}</p></div>
-        <div class="flex flex-col items-center text-center"><p class="text-[8px] text-gray-400 font-bold uppercase tracking-tighter mb-0.5">Status</p><p class="text-[11px] text-emerald-600 font-bold uppercase tracking-tighter">${data.call_status ? data.call_status.toLowerCase() : 'Answered'}</p></div>
+      <div class="grid grid-cols-3 gap-0.5 py-3 border-y border-gray-100 mb-3">
+        <div class="flex flex-col items-center text-center"><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Time</p><p class="text-sm text-gray-800 font-bold">${timeStr}</p></div>
+        <div class="flex flex-col items-center text-center border-x border-gray-100 px-1"><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Duration</p><p class="text-sm text-gray-800 font-bold">${formatDuration(data.duration)}</p></div>
+        <div class="flex flex-col items-center text-center"><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Status</p><p class="text-sm text-emerald-600 font-bold uppercase tracking-wide">${data.call_status ? data.call_status.toLowerCase() : 'Answered'}</p></div>
       </div>
-      ${data.notes ? `<div class="flex gap-2.5 mb-4 px-1"><div class="text-primary opacity-30 shrink-0"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 18.3137 20.3307 21 17.017 21H14.017ZM1.017 21L1.017 18C1.017 16.8954 1.91243 16 3.017 16H6.017C6.56928 16 7.017 15.5523 7.017 15V9C7.017 8.44772 6.56928 8 6.017 8H3.017C1.91243 8 1.017 7.10457 1.017 6V5C1.017 3.89543 1.91243 3 3.017 3H6.017C8.22614 3 10.017 4.79086 10.017 7V15C10.017 18.3137 7.33072 21 4.017 21H1.017Z"/></svg></div><p class="text-[13px] text-gray-700 font-medium leading-normal italic line-clamp-3">${data.notes}</p></div>` : ''}
+      ${data.notes ? `<div class="flex gap-3 mb-4 px-1"><div class="text-primary opacity-30 shrink-0"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 18.3137 20.3307 21 17.017 21H14.017ZM1.017 21L1.017 18C1.017 16.8954 1.91243 16 3.017 16H6.017C6.56928 16 7.017 15.5523 7.017 15V9C7.017 8.44772 6.56928 8 6.017 8H3.017C1.91243 8 1.017 7.10457 1.017 6V5C1.017 3.89543 1.91243 3 3.017 3H6.017C8.22614 3 10.017 4.79086 10.017 7V15C10.017 18.3137 7.33072 21 4.017 21H1.017Z"/></svg></div><p class="text-sm text-gray-700 font-medium leading-relaxed italic line-clamp-3">${data.notes}</p></div>` : ''}
       <div class="h-px bg-gray-50 mb-4"></div>
       <div class="flex items-center justify-between mb-3 px-1">
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-50 text-emerald-600 border border-emerald-100 font-bold text-[10px] shadow-sm"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg> ${outcomeText}</div>
-        <div class="flex items-center gap-1 text-gray-400"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg><span class="text-[10px] font-bold text-gray-500 uppercase tracking-tight">${data.telecaller_name}</span></div>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-emerald-600 border border-emerald-100 font-bold text-xs shadow-sm"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg> ${outcomeText}</div>
+        <div class="flex items-center gap-1.5 text-gray-400"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg><span class="text-xs font-bold text-gray-500 uppercase tracking-tight">${data.telecaller_name}</span></div>
       </div>
-      <div class="audio-container w-full pt-1"><div class="h-9 w-full bg-gray-50 rounded-lg flex items-center justify-center border border-dashed border-gray-200"><span class="text-[9px] text-gray-400 font-medium italic">Recording pending sync</span></div></div>`;
+      <div class="audio-container w-full pt-1"><div class="h-10 w-full bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200"><span class="text-xs text-gray-400 font-medium italic">Recording pending sync</span></div></div>`;
     todayHeader.after(card);
     updatePagination();
   });
