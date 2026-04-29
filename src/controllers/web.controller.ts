@@ -178,15 +178,15 @@ export class WebController {
         const outcome = log.outcome?.toUpperCase() || 'UNKNOWN';
         perf[log.telecaller_id].monthly.total++;
         perf[log.telecaller_id].monthly.talkTime += log.duration_seconds;
-        if (outcome === 'ANSWERED') perf[log.telecaller_id].monthly.answered++;
-        else if (outcome === 'MISSED') perf[log.telecaller_id].monthly.missed++;
-        else if (outcome === 'REJECTED' || outcome === 'CANCELLED') perf[log.telecaller_id].monthly.rejected++;
+        if (outcome.includes('ANSWERED')) perf[log.telecaller_id].monthly.answered++;
+        else if (outcome.includes('MISSED')) perf[log.telecaller_id].monthly.missed++;
+        else if (outcome.includes('REJECTED') || outcome.includes('CANCELLED')) perf[log.telecaller_id].monthly.rejected++;
         if (isToday) {
           perf[log.telecaller_id].daily.total++;
           perf[log.telecaller_id].daily.talkTime += log.duration_seconds;
-          if (outcome === 'ANSWERED') perf[log.telecaller_id].daily.answered++;
-          else if (outcome === 'MISSED') perf[log.telecaller_id].daily.missed++;
-          else if (outcome === 'REJECTED' || outcome === 'CANCELLED') perf[log.telecaller_id].daily.rejected++;
+          if (outcome.includes('ANSWERED')) perf[log.telecaller_id].daily.answered++;
+          else if (outcome.includes('MISSED')) perf[log.telecaller_id].daily.missed++;
+          else if (outcome.includes('REJECTED') || outcome.includes('CANCELLED')) perf[log.telecaller_id].daily.rejected++;
         }
       });
       const formatTime = (s: number) => {
