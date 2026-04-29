@@ -13,7 +13,7 @@ async function test() {
 
   const callLogsPerformance = await prisma.callLog.findMany({
     where: { lead: { business_owner_id: ownerId }, created_at: { gte: startOfMonth } },
-    select: { telecaller_id: true, outcome: true, duration_seconds: true, created_at: true }
+    select: { telecaller_id: true, outcome: true, call_status: true, duration_seconds: true, created_at: true }
   });
 
   const perf: Record<string, any> = {};
@@ -24,23 +24,23 @@ async function test() {
   callLogsPerformance.forEach(log => {
     if (!perf[log.telecaller_id]) return;
     const isToday = log.created_at >= startOfToday;
-    const outcome = log.outcome?.toUpperCase() || 'UNKNOWN';
+    const status = log.call_status?.toUpperCase() || 'UNKNOWN';
     
-    // DEBUG: print outcome
-    // console.log(`Outcome: ${outcome}`);
+    // DEBUG: print status
+    // console.log(`Status: ${status}`);
 
     perf[log.telecaller_id].monthly.total++;
     perf[log.telecaller_id].monthly.talkTime += log.duration_seconds;
-    if (outcome.includes('ANSWERED')) perf[log.telecaller_id].monthly.answered++;
-    else if (outcome.includes('MISSED')) perf[log.telecaller_id].monthly.missed++;
-    else if (outcome.includes('REJECTED') || outcome.includes('CANCELLED')) perf[log.telecaller_id].monthly.rejected++;
+    if (status.includes('ANSWERED')) perf[log.telecaller_id].monthly.answered++;
+    else if (status.includes('MISSED')) perf[log.telecaller_id].monthly.missed++;
+    else if (status.includes('REJECTED') || status.includes('CANCELLED')) perf[log.telecaller_id].monthly.rejected++;
 
     if (isToday) {
       perf[log.telecaller_id].daily.total++;
       perf[log.telecaller_id].daily.talkTime += log.duration_seconds;
-      if (outcome.includes('ANSWERED')) perf[log.telecaller_id].daily.answered++;
-      else if (outcome.includes('MISSED')) perf[log.telecaller_id].daily.missed++;
-      else if (outcome.includes('REJECTED') || outcome.includes('CANCELLED')) perf[log.telecaller_id].daily.rejected++;
+      if (status.includes('ANSWERED')) perf[log.telecaller_id].daily.answered++;
+      else if (status.includes('MISSED')) perf[log.telecaller_id].daily.missed++;
+      else if (status.includes('REJECTED') || status.includes('CANCELLED')) perf[log.telecaller_id].daily.rejected++;
     }
   });
 

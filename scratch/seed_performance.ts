@@ -12,14 +12,14 @@ async function main() {
   const outcomes = ['ANSWERED', 'ANSWERED_CALL', 'MISSED', 'MISSED_CALL', 'REJECTED', 'CANCELLED', 'BUSY'];
   
   for (let i = 0; i < 20; i++) {
-    const outcome = outcomes[i % outcomes.length];
+    const outcomeVal = outcomes[i % outcomes.length];
     await prisma.callLog.create({
       data: {
         lead_id: leadId,
         telecaller_id: telecallerId,
-        duration_seconds: outcome === 'ANSWERED' ? Math.floor(Math.random() * 300) + 30 : 0,
-        call_status: 'COMPLETED',
-        outcome: outcome,
+        duration_seconds: outcomeVal.includes('ANSWERED') ? Math.floor(Math.random() * 300) + 30 : 0,
+        call_status: outcomeVal,
+        outcome: null,
         created_at: new Date() // Today
       }
     });
@@ -30,14 +30,14 @@ async function main() {
   lastWeek.setDate(lastWeek.getDate() - 5);
   
   for (let i = 0; i < 10; i++) {
-    const outcome = outcomes[i % outcomes.length];
+    const outcomeVal = outcomes[i % outcomes.length];
     await prisma.callLog.create({
       data: {
         lead_id: leadId,
         telecaller_id: telecallerId,
-        duration_seconds: outcome === 'ANSWERED' ? Math.floor(Math.random() * 300) + 30 : 0,
-        call_status: 'COMPLETED',
-        outcome: outcome,
+        duration_seconds: outcomeVal.includes('ANSWERED') ? Math.floor(Math.random() * 300) + 30 : 0,
+        call_status: outcomeVal,
+        outcome: null,
         created_at: lastWeek
       }
     });
