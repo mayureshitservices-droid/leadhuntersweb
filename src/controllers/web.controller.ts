@@ -160,6 +160,46 @@ export class WebController {
         take: 50
       });
 
+      // Performance Stats Logic
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const callLogsPerformance = await prisma.callLog.findMany({
+        where: { lead: { business_owner_id: ownerId }, created_at: { gte: startOfMonth } },
+        select: { telecaller_id: true, outcome: true, duration_seconds: true, created_at: true }
+      });
+      const perf: Record<string, any> = {};
+      telecallers.forEach(tc => {
+        perf[tc.id] = { id: tc.id, name: tc.name, daily: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 }, monthly: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 } };
+      });
+      callLogsPerformance.forEach(log => {
+        if (!perf[log.telecaller_id]) return;
+        const isToday = log.created_at >= startOfToday;
+        const outcome = log.outcome?.toUpperCase() || 'UNKNOWN';
+        perf[log.telecaller_id].monthly.total++;
+        perf[log.telecaller_id].monthly.talkTime += log.duration_seconds;
+        if (outcome === 'ANSWERED') perf[log.telecaller_id].monthly.answered++;
+        else if (outcome === 'MISSED') perf[log.telecaller_id].monthly.missed++;
+        else if (outcome === 'REJECTED' || outcome === 'CANCELLED') perf[log.telecaller_id].monthly.rejected++;
+        if (isToday) {
+          perf[log.telecaller_id].daily.total++;
+          perf[log.telecaller_id].daily.talkTime += log.duration_seconds;
+          if (outcome === 'ANSWERED') perf[log.telecaller_id].daily.answered++;
+          else if (outcome === 'MISSED') perf[log.telecaller_id].daily.missed++;
+          else if (outcome === 'REJECTED' || outcome === 'CANCELLED') perf[log.telecaller_id].daily.rejected++;
+        }
+      });
+      const formatTime = (s: number) => {
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        return h > 0 ? `${h}h ${m}m` : `${m}m`;
+      };
+      const telecallerPerformance = Object.values(perf).map(p => ({
+        ...p,
+        daily: { ...p.daily, talkTimeFormatted: formatTime(p.daily.talkTime) },
+        monthly: { ...p.monthly, talkTimeFormatted: formatTime(p.monthly.talkTime) }
+      }));
+
       res.render('owner_dashboard', {
          user,
          stats,
@@ -169,7 +209,8 @@ export class WebController {
          assignError,
          leads,
          telecallers,
-         callLogs
+         callLogs,
+         telecallerPerformance
       });
   };
 

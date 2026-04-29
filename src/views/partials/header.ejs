@@ -11,6 +11,7 @@
 <body class="bg-bg-light font-sans text-gray-800 antialiased min-h-screen flex" 
   x-data="{ 
     sidebarOpen: false, 
+    selectedAgent: 'all',
     activeTab: new URLSearchParams(window.location.search).get('tab') || (window.location.pathname === '/owner' ? 'upload' : 'customers')
   }"
   x-init="$watch('activeTab', value => {
@@ -98,6 +99,16 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
         <span class="font-medium">Detailed View</span>
+      </a>
+
+      <a href="/owner?tab=performance" 
+         @click.prevent="if(window.location.pathname === '/owner') { activeTab = 'performance'; sidebarOpen = false; } else { window.location.href = '/owner?tab=performance' }"
+         class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group"
+         :class="(window.location.pathname === '/owner' && activeTab === 'performance') ? 'bg-container text-primary shadow-sm' : 'text-gray-600 hover:bg-container hover:text-primary'">
+        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2" />
+        </svg>
+        <span class="font-medium">Performance</span>
       </a>
       <% } %>
 
