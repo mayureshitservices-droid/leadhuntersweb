@@ -10,7 +10,11 @@ import path from 'path';
 import crypto from 'crypto';
 
 // Setup disk storage to prevent memory buffering (OOM issues)
-const upload = multer({ dest: 'temp_uploads/' }).single('recording');
+const tempDir = path.join(process.cwd(), 'temp_uploads');
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
+const upload = multer({ dest: tempDir }).single('recording');
 
 export class SyncController {
 
