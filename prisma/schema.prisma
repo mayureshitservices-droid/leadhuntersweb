@@ -68,6 +68,7 @@ model Lead {
   name              String
   phone             String
   status            LeadStatus @default(PENDING)
+  additional_data   Json?
   created_at        DateTime   @default(now())
 
   // Relations

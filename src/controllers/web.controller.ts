@@ -153,7 +153,7 @@ export class WebController {
            }
         },
         include: {
-           lead: { select: { name: true, phone: true } },
+           lead: { select: { name: true, phone: true, additional_data: true, status: true } },
            telecaller: { select: { name: true, device_alias: true } }
         },
         orderBy: { created_at: 'desc' },
@@ -281,18 +281,53 @@ export class WebController {
   private normalizeLead = (row: any, ownerId: string, telecallerId?: string) => {
     // Normalize keys to lowercase for easier lookup
     const normalizedRow: any = {};
+    
     Object.keys(row).forEach(key => {
-       normalizedRow[key.toLowerCase().trim()] = row[key];
+       const normalizedKey = key.toLowerCase().trim();
+       normalizedRow[normalizedKey] = row[key];
     });
 
-    const name = normalizedRow.name || normalizedRow['full name'] || normalizedRow['customer name'] || normalizedRow['client name'] || normalizedRow['lead name'] || 'Unknown';
-    const phone = normalizedRow.phone || normalizedRow.mobile || normalizedRow.number || normalizedRow['phone number'] || normalizedRow['contact number'] || normalizedRow['mobile number'] || '0000000000';
+    const nameKeys = ['name', 'full name', 'customer name', 'client name', 'lead name'];
+    const phoneKeys = ['phone', 'mobile', 'number', 'phone number', 'contact number', 'mobile number'];
+
+    let name = 'Unknown';
+    let phone = '0000000000';
+    let foundNameKey = '';
+    let foundPhoneKey = '';
+
+    // Find Name
+    for (const key of nameKeys) {
+      if (normalizedRow[key]) {
+        name = String(normalizedRow[key]).trim();
+        // Find the original key to exclude it from additional_data
+        foundNameKey = Object.keys(row).find(k => k.toLowerCase().trim() === key) || '';
+        break;
+      }
+    }
+
+    // Find Phone
+    for (const key of phoneKeys) {
+      if (normalizedRow[key]) {
+        phone = String(normalizedRow[key]).trim().replace(/[^\d+]/g, '');
+        foundPhoneKey = Object.keys(row).find(k => k.toLowerCase().trim() === key) || '';
+        break;
+      }
+    }
+
+    // Capture everything else as additional_data
+    const additional_data: any = {};
+    Object.keys(row).forEach(key => {
+      if (key !== foundNameKey && key !== foundPhoneKey) {
+        additional_data[key] = row[key];
+      }
+    });
 
     return {
        business_owner_id: ownerId,
        telecaller_id: telecallerId || null,
-       name: String(name).trim(),
-       phone: String(phone).trim().replace(/[^\d+]/g, '') // Keep digits and + only
+       name,
+       phone,
+       additional_data: Object.keys(additional_data).length > 0 ? additional_data : null
     };
   };
 

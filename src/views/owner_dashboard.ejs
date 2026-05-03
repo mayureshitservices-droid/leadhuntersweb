@@ -125,7 +125,9 @@
               <tbody id="leads-table-body" class="bg-white divide-y divide-gray-200">
                 <% if (locals.leads && leads.length > 0) { %>
                   <% leads.forEach(function(lead) { %>
-                    <tr class="lead-row hover:bg-gray-50 transition-colors">
+                    <tr class="lead-row hover:bg-gray-50 transition-colors cursor-pointer" 
+                        data-lead="<%= JSON.stringify(lead) %>"
+                        @click="openLeadDetails($el.dataset.lead)">
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900"><%= lead.name %></td>
                       <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium"><%= lead.phone %></td>
                       <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-700">
@@ -147,17 +149,19 @@
           <div id="leads-cards-container" class="md:hidden divide-y divide-gray-100">
              <% if (locals.leads && leads.length > 0) { %>
                <% leads.forEach(function(lead) { %>
-                 <div class="lead-card p-5 hover:bg-gray-50 transition-colors">
-                   <div class="flex justify-between items-start">
-                     <div>
-                       <h4 class="text-base font-bold text-gray-900"><%= lead.name %></h4>
-                       <p class="text-sm text-gray-500 font-medium mt-1"><%= lead.phone %></p>
-                     </div>
-                     <% if (lead.telecaller) { %>
-                       <span class="text-[10px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider"><%= lead.telecaller.device_alias || lead.telecaller.name %></span>
-                     <% } %>
-                   </div>
-                 </div>
+                  <div class="lead-card p-5 hover:bg-gray-50 transition-colors cursor-pointer" 
+                       data-lead="<%= JSON.stringify(lead) %>"
+                       @click="openLeadDetails($el.dataset.lead)">
+                    <div class="flex justify-between items-start">
+                      <div>
+                        <h4 class="text-base font-bold text-gray-900"><%= lead.name %></h4>
+                        <p class="text-sm text-gray-500 font-medium mt-1"><%= lead.phone %></p>
+                      </div>
+                      <% if (lead.telecaller) { %>
+                        <span class="text-[10px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider"><%= lead.telecaller.device_alias || lead.telecaller.name %></span>
+                      <% } %>
+                    </div>
+                  </div>
                <% }); %>
              <% } %>
           </div>
@@ -249,7 +253,7 @@
              <tbody id="live-calls" class="bg-white divide-y divide-gray-200">
                <% if (locals.callLogs && callLogs.length > 0) { %>
                  <% callLogs.forEach(function(log) { %>
-                   <tr id="log-<%= log.id %>" class="log-row hover:bg-gray-50 transition-colors animate-fade-in-up">
+                   <tr id="log-<%= log.id %>" class="log-row hover:bg-gray-50 transition-colors animate-fade-in-up cursor-pointer" data-lead="<%= JSON.stringify(log.lead) %>" @click="openLeadDetails($el.dataset.lead, '<%= log.outcome || log.call_status %>')">
                      <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900"><%= log.lead.name %></td>
                      <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium"><%= log.lead.phone %></td>
                      <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium"><%= new Date(log.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true }) %></td>
@@ -275,7 +279,10 @@
                  if (logDate !== lastDate) { lastDate = logDate; %>
               <div class="date-header px-4 py-3 bg-white/95 backdrop-blur-md text-[10px] font-bold text-gray-400 sticky top-0 z-10 border-b border-gray-100 uppercase tracking-[0.2em] mb-6 mt-10 first:mt-0"><%= logDate %></div>
           <% } %>
-              <div id="card-log-<%= log.id %>" class="activity-card bg-white p-5 mb-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)] border border-gray-100 rounded-2xl mx-3 animate-fade-in-up">
+              <div id="card-log-<%= log.id %>" 
+                   class="activity-card bg-white p-5 mb-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)] border border-gray-100 rounded-2xl mx-3 animate-fade-in-up cursor-pointer"
+                   data-lead="<%= JSON.stringify(log.lead) %>"
+                   @click="openLeadDetails($el.dataset.lead, '<%= log.outcome || log.call_status %>')">
                 <!-- Header: Info (No redundant badge) -->
                 <div class="mb-3">
                   <h4 class="text-lg font-bold text-gray-900 leading-tight tracking-tight"><%= log.lead.name %></h4>
@@ -470,6 +477,28 @@
   const mobilePerPage = 5;
   let currentMobilePage = 1;
   let currentLeadsMobilePage = 1;
+  
+  // Global function for Alpine to open lead details
+  window.openLeadDetails = function(leadData, interactionStatus = null) {
+    let lead = leadData;
+    if (typeof leadData === 'string') {
+      try {
+        lead = JSON.parse(leadData);
+      } catch (e) {
+        console.error("Failed to parse lead data", e);
+        return;
+      }
+    }
+    
+    // Alpine v3 way to access global state
+    const bodyData = Alpine.$data(document.body);
+    if (bodyData) {
+      bodyData.selectedLead = lead;
+      // If we have a specific call outcome, use it, otherwise use lead status
+      bodyData.displayStatus = (interactionStatus || lead.status || 'PENDING').toUpperCase();
+      bodyData.leadModalOpen = true;
+    }
+  };
 
   function formatDuration(totalSeconds) {
     const mins = Math.floor(totalSeconds / 60);
@@ -595,7 +624,22 @@
     tr.id = `log-${data.log_id}`;
     tr.className = "log-row hover:bg-gray-50 transition-colors animate-fade-in-up";
     const ts = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true });
+    
+    // Prepare lead data for clicking new rows
+    const leadData = {
+      name: data.lead_name,
+      phone: data.lead_phone,
+      status: 'PENDING', // Default for new incoming calls
+      additional_data: data.additional_data || {}
+    };
+    const leadStr = JSON.stringify(leadData).replace(/"/g, '&quot;');
+
     tr.innerHTML = `<td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${data.lead_name}</td><td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${data.lead_phone}</td><td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${ts}</td><td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${formatDuration(data.duration)}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize">${data.call_status ? data.call_status.toLowerCase() : ''}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize">${outcomeText}</td><td class="px-6 py-4 text-[11px] text-gray-600 italic max-w-xs truncate">${data.notes || '—'}</td><td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-700">${data.telecaller_name}</td><td class="px-6 py-4 whitespace-nowrap"><div class="audio-container"></div></td>`;
+    
+    // Add click handler to new row
+    tr.setAttribute('onclick', `window.openLeadDetails(${leadStr}, '${data.outcome || data.call_status}')`);
+    tr.style.cursor = 'pointer';
+
     list.prepend(tr);
 
     const today = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
@@ -609,7 +653,8 @@
 
     const card = document.createElement('div');
     card.id = `card-log-${data.log_id}`;
-    card.className = "activity-card bg-white p-5 mb-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)] border border-gray-100 rounded-2xl mx-3 animate-fade-in-up";
+    card.className = "activity-card bg-white p-5 mb-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)] border border-gray-100 rounded-2xl mx-3 animate-fade-in-up cursor-pointer";
+    card.setAttribute('onclick', `window.openLeadDetails(${leadStr}, '${data.outcome || data.call_status}')`);
     const timeStr = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true });
     
     card.innerHTML = `
@@ -643,5 +688,80 @@
     });
   });
 </script>
+
+<!-- Lead Details Modal -->
+<div x-show="leadModalOpen" 
+     x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100">
+    
+    <div @click.away="leadModalOpen = false" 
+         style="background: #ffffff; border-radius: 24px; box-shadow: 0 50px 100px -20px rgba(0,0,0,0.3); width: 95%; max-width: 1100px; overflow: hidden; transform: translateZ(0); border: none;"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-[0.98] translate-y-4"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+        
+        <!-- Stable Header -->
+        <div style="padding: 32px; border-bottom: 1px solid #f1f5f9; display: flex; justify-between: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #6366f1; font-weight: 800; font-size: 18px;" x-text="selectedLead ? selectedLead.name.charAt(0) : '?'"></div>
+                <div style="display: flex; flex-direction: column;">
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;" x-text="selectedLead ? selectedLead.name : 'Lead Details'"></h3>
+                    <p style="margin: 4px 0 0; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;" x-text="selectedLead ? 'Record ID: ' + selectedLead.id.split('-')[0] : ''"></p>
+                </div>
+            </div>
+            <button @click="leadModalOpen = false" style="background: none; border: none; cursor: pointer; color: #cbd5e1; margin-left: auto;">
+                <svg style="width: 28px; height: 28px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Stable Body -->
+        <div style="padding: 32px; background: #f8fafc; max-height: 65vh; overflow-y: auto;">
+            <!-- Core Info Row: Dedicated Top Section -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;">
+                <div style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Contact Number</span>
+                    <span style="font-size: 18px; font-weight: 800; color: #0f172a;" x-text="selectedLead ? selectedLead.phone : '—'"></span>
+                </div>
+
+                <div style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Current Status</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 10px; height: 10px; border-radius: 50%;" :style="displayStatus === 'PENDING' ? 'background: #fbbf24' : 'background: #10b981'"></div>
+                        <span style="font-size: 14px; font-weight: 800; color: #0f172a; text-transform: uppercase;" x-text="displayStatus"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Insights: Forced 4-Column Grid -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; box-sizing: border-box;">
+                <template x-for="(value, key) in (selectedLead ? selectedLead.additional_data : {})" :key="key">
+                    <div style="background: white; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden;">
+                        <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="key"></span>
+                        <span style="font-size: 13px; font-weight: 700; color: #334155; word-break: break-word;" x-text="value"></span>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty State -->
+            <div x-show="selectedLead && (!selectedLead.additional_data || Object.keys(selectedLead.additional_data).length === 0)" 
+                 style="margin-top: 16px; padding: 40px; text-align: center; background: white; border-radius: 20px; border: 1px solid #f1f5f9;">
+                <p style="font-size: 11px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1px;">No additional data available</p>
+            </div>
+        </div>
+
+        <!-- Stable Footer -->
+        <div style="padding: 24px 32px; background: white; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; align-items: center;">
+            <button @click="leadModalOpen = false" 
+                    style="background: #ef4444; color: white; padding: 12px 32px; border-radius: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; border: none; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.02)'"
+                    onmouseout="this.style.transform='scale(1)'">
+                Close Details
+            </button>
+        </div>
+    </div>
+</div>
 
 <%- include('partials/footer') %>

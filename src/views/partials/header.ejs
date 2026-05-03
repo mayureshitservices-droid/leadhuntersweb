@@ -12,7 +12,10 @@
   x-data="{ 
     sidebarOpen: false, 
     selectedAgent: 'all',
-    activeTab: new URLSearchParams(window.location.search).get('tab') || (window.location.pathname === '/owner' ? 'upload' : 'customers')
+    activeTab: new URLSearchParams(window.location.search).get('tab') || (window.location.pathname === '/owner' ? 'upload' : 'customers'),
+    leadModalOpen: false,
+    selectedLead: null,
+    displayStatus: ''
   }"
   x-init="$watch('activeTab', value => {
     if (window.location.pathname === '/admin' || window.location.pathname === '/owner') {

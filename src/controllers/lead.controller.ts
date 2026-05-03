@@ -35,6 +35,7 @@ export class LeadController {
         name: lead.name,
         phone: lead.phone,
         status: lead.status,
+        additional_data: lead.additional_data,
         business_owner_id: lead.business_owner_id,
         business_owner_name: lead.business_owner.name
       }));
