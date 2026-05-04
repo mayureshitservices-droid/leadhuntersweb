@@ -153,7 +153,7 @@ export class WebController {
            }
         },
         include: {
-           lead: { select: { name: true, phone: true, additional_data: false, status: true } },
+           lead: { select: { name: true, phone: true, status: true } },
            telecaller: { select: { name: true, device_alias: true } }
         },
         orderBy: { created_at: 'desc' },
