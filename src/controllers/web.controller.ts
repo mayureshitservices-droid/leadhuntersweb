@@ -249,8 +249,8 @@ export class WebController {
       // Collect all dynamic keys from additional_data
       const dynamicKeys = new Set<string>();
       logs.forEach(log => {
-        if ((log.lead as any).additional_data && typeof (log.lead as any).additional_data === 'object') {
-          Object.keys((log.lead as any).additional_data).forEach(key => dynamicKeys.add(key));
+        if (log.lead.additional_data && typeof log.lead.additional_data === 'object') {
+          Object.keys(log.lead.additional_data).forEach(key => dynamicKeys.add(key));
         }
       });
 
@@ -270,7 +270,7 @@ export class WebController {
         };
 
         // Add dynamic fields
-        const additionalData = (log.lead as any).additional_data as Record<string, any>;
+        const additionalData = log.lead.additional_data as Record<string, any>;
         dynamicKeys.forEach(key => {
           row[key] = additionalData ? (additionalData[key] || '—') : '—';
         });
@@ -408,7 +408,7 @@ export class WebController {
        name,
        phone,
        additional_data: Object.keys(additional_data).length > 0 ? additional_data : null
-    } as any;
+    };
   };
 
   postAssignLeads = async (req: Request, res: Response) => {
