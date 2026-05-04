@@ -15,7 +15,9 @@
     activeTab: new URLSearchParams(window.location.search).get('tab') || (window.location.pathname === '/owner' ? 'upload' : 'customers'),
     leadModalOpen: false,
     selectedLead: null,
-    displayStatus: ''
+    displayStatus: '',
+    exportStart: '',
+    exportEnd: ''
   }"
   x-init="$watch('activeTab', value => {
     if (window.location.pathname === '/admin' || window.location.pathname === '/owner') {

@@ -27,6 +27,7 @@ router.post('/admin/delete-customer', requireRole('SUPER_ADMIN'), webController.
 router.get('/owner', requireRole('BUSINESS_OWNER'), webController.getOwnerDashboard);
 router.post('/owner/upload-leads', requireRole('BUSINESS_OWNER'), upload.single('leads_file'), webController.postUploadLeads);
 router.post('/owner/assign-leads', requireRole('BUSINESS_OWNER'), webController.postAssignLeads);
+router.get('/owner/export-calls', requireRole('BUSINESS_OWNER'), webController.exportCallLogs);
 
 // Assignments
 router.get('/admin/telecaller-assignments/:id', requireRole('SUPER_ADMIN'), webController.getTelecallerAssignments);

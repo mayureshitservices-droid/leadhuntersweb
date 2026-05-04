@@ -214,6 +214,86 @@ export class WebController {
       });
   };
 
+  exportCallLogs = async (req: Request, res: Response) => {
+    try {
+      const ownerId = req.session.user!.id;
+      const { start, end } = req.query;
+
+      const dateFilter: any = {
+        lead: { business_owner_id: ownerId }
+      };
+
+      if (start || end) {
+        dateFilter.created_at = {};
+        if (start) dateFilter.created_at.gte = new Date(start as string);
+        if (end) {
+          const endDate = new Date(end as string);
+          endDate.setHours(23, 59, 59, 999);
+          dateFilter.created_at.lte = endDate;
+        }
+      }
+
+      const logs = await prisma.callLog.findMany({
+        where: dateFilter,
+        include: {
+          lead: true,
+          telecaller: { select: { name: true, device_alias: true } }
+        },
+        orderBy: { created_at: 'desc' }
+      });
+
+      if (logs.length === 0) {
+        return res.status(404).send('No logs found for the selected range.');
+      }
+
+      // Collect all dynamic keys from additional_data
+      const dynamicKeys = new Set<string>();
+      logs.forEach(log => {
+        if (log.lead.additional_data && typeof log.lead.additional_data === 'object') {
+          Object.keys(log.lead.additional_data).forEach(key => dynamicKeys.add(key));
+        }
+      });
+
+      const excelData = logs.map(log => {
+        const row: any = {
+          'Customer Name': log.lead.name,
+          'Phone': log.lead.phone,
+          'Date': new Date(log.created_at).toLocaleDateString('en-IN'),
+          'Time': new Date(log.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          'Duration (Sec)': log.duration_seconds,
+          'Duration (MM:SS)': `${Math.floor(log.duration_seconds / 60).toString().padStart(2, '0')}:${(log.duration_seconds % 60).toString().padStart(2, '0')}`,
+          'Status': log.call_status,
+          'Outcome': (log.outcome && log.outcome !== 'PENDING' ? log.outcome : '—').replace(/_/g, ' '),
+          'Notes': log.notes || '—',
+          'Telecaller': log.telecaller.device_alias || log.telecaller.name,
+          'Recording URL': log.recording_url || 'N/A'
+        };
+
+        // Add dynamic fields
+        const additionalData = log.lead.additional_data as Record<string, any>;
+        dynamicKeys.forEach(key => {
+          row[key] = additionalData ? (additionalData[key] || '—') : '—';
+        });
+
+        return row;
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Call Logs');
+
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=Call_Logs_${start || 'all'}_to_${end || 'today'}.xlsx`);
+      res.send(buffer);
+
+    } catch (error) {
+      console.error('Export Error:', error);
+      res.status(500).send('Internal Server Error during export.');
+    }
+  };
+
   postUploadLeads = async (req: Request, res: Response) => {
     if (!req.file) {
       return res.redirect('/owner?upload=error');
