@@ -53,17 +53,15 @@ export class AuthController {
        }
 
        // Automatically upsert the telecaller device
-       let user = await prisma.user.findUnique({ where: { device_id } });
-
-       if (!user) {
-          user = await prisma.user.create({
-             data: {
-                device_id,
-                name: name || `Telecaller Device ${device_id.substring(0, 4)}`,
-                role: 'TELECALLER'
-             }
-          });
-       }
+       const user = await prisma.user.upsert({
+          where: { device_id },
+          update: {}, // No updates if it already exists
+          create: {
+             device_id,
+             name: name || `Telecaller Device ${device_id.substring(0, 4)}`,
+             role: 'TELECALLER'
+          }
+       });
 
        const token = jwt.sign(
          { id: user.id, role: user.role, name: user.name },

@@ -344,15 +344,20 @@ export class WebController {
         return res.redirect(`/owner?upload=error&msg=missing_columns&headers=${encodeURIComponent(allHeaders)}`);
       }
 
-      await prisma.lead.createMany({
-        data: leadsToInsert,
-        skipDuplicates: true
-      });
+      // Batch process to prevent "Payload Too Large" errors when dealing with many columns/rows
+      const BATCH_SIZE = 500;
+      for (let i = 0; i < leadsToInsert.length; i += BATCH_SIZE) {
+        const batch = leadsToInsert.slice(i, i + BATCH_SIZE);
+        await prisma.lead.createMany({
+          data: batch,
+          skipDuplicates: true
+        });
+      }
 
       safeUnlink(filePath);
       res.redirect('/owner?upload=success');
     } catch (err) {
-      console.error('Upload Error:', err);
+      console.error('Upload Error Details:', err instanceof Error ? err.message : err);
       safeUnlink(filePath);
       res.redirect('/owner?upload=error');
     }
@@ -402,12 +407,18 @@ export class WebController {
       }
     });
 
+    let safeAdditionalData = null;
+    if (Object.keys(additional_data).length > 0) {
+      // Strip out incompatible data types (like Date objects or undefined) to prevent Prisma Json crashes
+      safeAdditionalData = JSON.parse(JSON.stringify(additional_data));
+    }
+
     return {
        business_owner_id: ownerId,
        telecaller_id: telecallerId || null,
        name,
        phone,
-       additional_data: Object.keys(additional_data).length > 0 ? additional_data : null
+       additional_data: safeAdditionalData
     } as any;
   };
 

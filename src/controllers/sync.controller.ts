@@ -16,6 +16,14 @@ if (!fs.existsSync(tempDir)) {
 }
 const upload = multer({ dest: tempDir }).single('recording');
 
+const safeUnlink = (filePath: string) => {
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  } catch (err) {
+    console.error(`SafeUnlink failed for ${filePath}:`, err);
+  }
+};
+
 export class SyncController {
 
   syncCallLog = async (req: AuthRequest, res: Response) => {
@@ -65,7 +73,7 @@ export class SyncController {
         callLog = await prisma.callLog.update({
           where: { id: existingLog.id },
           data: {
-            duration_seconds: duration_seconds ? parseInt(duration_seconds, 10) : existingLog.duration_seconds,
+            duration_seconds: duration_seconds ? (parseInt(duration_seconds, 10) || 0) : existingLog.duration_seconds,
             call_status: call_status || existingLog.call_status,
             outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(/ /g, '_') : existingLog.outcome,
             notes: notes || existingLog.notes,
@@ -80,7 +88,7 @@ export class SyncController {
             lead_id,
             telecaller_id,
             local_log_id: local_log_id ? local_log_id.toString() : null,
-            duration_seconds: duration_seconds ? parseInt(duration_seconds, 10) : 0,
+            duration_seconds: duration_seconds ? (parseInt(duration_seconds, 10) || 0) : 0,
             call_status: call_status || 'UNKNOWN',
             outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(/ /g, '_') : null,
             notes: notes || null
@@ -115,7 +123,7 @@ export class SyncController {
       if (!req.file) return res.status(400).json({ error: 'No file provided' });
       const file = req.file;
       if (!req.body.log_id) {
-        fs.unlinkSync(file.path);
+        safeUnlink(file.path);
         return res.status(400).json({ error: 'log_id is required' });
       }
 
@@ -134,7 +142,7 @@ export class SyncController {
         const fileStream = fs.createReadStream(file.path);
 
         if (!ociClient) {
-          fs.unlinkSync(file.path);
+          safeUnlink(file.path);
           return res.status(500).json({ error: 'OCI Client not configured' });
         }
 
@@ -148,7 +156,7 @@ export class SyncController {
         };
 
         const response = await ociClient.putObject(putObjectRequest);
-        fs.unlinkSync(file.path); // cleanup
+        safeUnlink(file.path); // cleanup
 
         const recordingUrl = `https://objectstorage.${region}.oraclecloud.com/n/${namespace}/b/${bucketName}/o/${encodeURIComponent(objectName)}`;
 
@@ -169,7 +177,7 @@ export class SyncController {
 
       } catch (error: any) {
         console.error('OCI Upload Error:', error);
-        if (req.file) fs.unlinkSync(req.file.path);
+        if (req.file) safeUnlink(req.file.path);
         res.status(500).json({ error: `Storage Error: ${error.message || 'Unknown'}` });
       }
     });

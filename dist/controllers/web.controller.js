@@ -139,12 +139,58 @@ export class WebController {
                 }
             },
             include: {
-                lead: { select: { name: true, phone: true } },
+                lead: { select: { name: true, phone: true, status: true } },
                 telecaller: { select: { name: true, device_alias: true } }
             },
             orderBy: { created_at: 'desc' },
             take: 50
         });
+        // Performance Stats Logic
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const callLogsPerformance = await prisma.callLog.findMany({
+            where: { lead: { business_owner_id: ownerId }, created_at: { gte: startOfMonth } },
+            select: { telecaller_id: true, outcome: true, call_status: true, duration_seconds: true, created_at: true }
+        });
+        const perf = {};
+        telecallers.forEach(tc => {
+            perf[tc.id] = { id: tc.id, name: tc.name, daily: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 }, monthly: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 } };
+        });
+        callLogsPerformance.forEach(log => {
+            if (!perf[log.telecaller_id])
+                return;
+            const isToday = log.created_at >= startOfToday;
+            const status = log.call_status?.toUpperCase() || 'UNKNOWN';
+            perf[log.telecaller_id].monthly.total++;
+            perf[log.telecaller_id].monthly.talkTime += log.duration_seconds;
+            if (status.includes('ANSWERED'))
+                perf[log.telecaller_id].monthly.answered++;
+            else if (status.includes('MISSED'))
+                perf[log.telecaller_id].monthly.missed++;
+            else if (status.includes('REJECTED') || status.includes('CANCELLED'))
+                perf[log.telecaller_id].monthly.rejected++;
+            if (isToday) {
+                perf[log.telecaller_id].daily.total++;
+                perf[log.telecaller_id].daily.talkTime += log.duration_seconds;
+                if (status.includes('ANSWERED'))
+                    perf[log.telecaller_id].daily.answered++;
+                else if (status.includes('MISSED'))
+                    perf[log.telecaller_id].daily.missed++;
+                else if (status.includes('REJECTED') || status.includes('CANCELLED'))
+                    perf[log.telecaller_id].daily.rejected++;
+            }
+        });
+        const formatTime = (s) => {
+            const h = Math.floor(s / 3600);
+            const m = Math.floor((s % 3600) / 60);
+            return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        };
+        const telecallerPerformance = Object.values(perf).map(p => ({
+            ...p,
+            daily: { ...p.daily, talkTimeFormatted: formatTime(p.daily.talkTime) },
+            monthly: { ...p.monthly, talkTimeFormatted: formatTime(p.monthly.talkTime) }
+        }));
         res.render('owner_dashboard', {
             user,
             stats,
@@ -154,8 +200,78 @@ export class WebController {
             assignError,
             leads,
             telecallers,
-            callLogs
+            callLogs,
+            telecallerPerformance
         });
+    };
+    exportCallLogs = async (req, res) => {
+        try {
+            const ownerId = req.session.user.id;
+            const { start, end } = req.query;
+            const dateFilter = {
+                lead: { business_owner_id: ownerId }
+            };
+            if (start || end) {
+                dateFilter.created_at = {};
+                if (start)
+                    dateFilter.created_at.gte = new Date(start);
+                if (end) {
+                    const endDate = new Date(end);
+                    endDate.setHours(23, 59, 59, 999);
+                    dateFilter.created_at.lte = endDate;
+                }
+            }
+            const logs = await prisma.callLog.findMany({
+                where: dateFilter,
+                include: {
+                    lead: true,
+                    telecaller: { select: { name: true, device_alias: true } }
+                },
+                orderBy: { created_at: 'desc' }
+            });
+            if (logs.length === 0) {
+                return res.status(404).send('No logs found for the selected range.');
+            }
+            // Collect all dynamic keys from additional_data
+            const dynamicKeys = new Set();
+            logs.forEach(log => {
+                if (log.lead.additional_data && typeof log.lead.additional_data === 'object') {
+                    Object.keys(log.lead.additional_data).forEach(key => dynamicKeys.add(key));
+                }
+            });
+            const excelData = logs.map(log => {
+                const row = {
+                    'Customer Name': log.lead.name,
+                    'Phone': log.lead.phone,
+                    'Date': new Date(log.created_at).toLocaleDateString('en-IN'),
+                    'Time': new Date(log.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+                    'Duration (Sec)': log.duration_seconds,
+                    'Duration (MM:SS)': `${Math.floor(log.duration_seconds / 60).toString().padStart(2, '0')}:${(log.duration_seconds % 60).toString().padStart(2, '0')}`,
+                    'Status': log.call_status,
+                    'Outcome': (log.outcome && log.outcome !== 'PENDING' ? log.outcome : '—').replace(/_/g, ' '),
+                    'Notes': log.notes || '—',
+                    'Telecaller': log.telecaller.device_alias || log.telecaller.name,
+                    'Recording URL': log.recording_url || 'N/A'
+                };
+                // Add dynamic fields
+                const additionalData = log.lead.additional_data;
+                dynamicKeys.forEach(key => {
+                    row[key] = additionalData ? (additionalData[key] || '—') : '—';
+                });
+                return row;
+            });
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Call Logs');
+            const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename=Call_Logs_${start || 'all'}_to_${end || 'today'}.xlsx`);
+            res.send(buffer);
+        }
+        catch (error) {
+            console.error('Export Error:', error);
+            res.status(500).send('Internal Server Error during export.');
+        }
     };
     postUploadLeads = async (req, res) => {
         if (!req.file) {
@@ -201,15 +317,20 @@ export class WebController {
                 safeUnlink(filePath);
                 return res.redirect(`/owner?upload=error&msg=missing_columns&headers=${encodeURIComponent(allHeaders)}`);
             }
-            await prisma.lead.createMany({
-                data: leadsToInsert,
-                skipDuplicates: true
-            });
+            // Batch process to prevent "Payload Too Large" errors when dealing with many columns/rows
+            const BATCH_SIZE = 500;
+            for (let i = 0; i < leadsToInsert.length; i += BATCH_SIZE) {
+                const batch = leadsToInsert.slice(i, i + BATCH_SIZE);
+                await prisma.lead.createMany({
+                    data: batch,
+                    skipDuplicates: true
+                });
+            }
             safeUnlink(filePath);
             res.redirect('/owner?upload=success');
         }
         catch (err) {
-            console.error('Upload Error:', err);
+            console.error('Upload Error Details:', err instanceof Error ? err.message : err);
             safeUnlink(filePath);
             res.redirect('/owner?upload=error');
         }
@@ -218,15 +339,50 @@ export class WebController {
         // Normalize keys to lowercase for easier lookup
         const normalizedRow = {};
         Object.keys(row).forEach(key => {
-            normalizedRow[key.toLowerCase().trim()] = row[key];
+            const normalizedKey = key.toLowerCase().trim();
+            normalizedRow[normalizedKey] = row[key];
         });
-        const name = normalizedRow.name || normalizedRow['full name'] || normalizedRow['customer name'] || normalizedRow['client name'] || normalizedRow['lead name'] || 'Unknown';
-        const phone = normalizedRow.phone || normalizedRow.mobile || normalizedRow.number || normalizedRow['phone number'] || normalizedRow['contact number'] || normalizedRow['mobile number'] || '0000000000';
+        const nameKeys = ['name', 'full name', 'customer name', 'client name', 'lead name'];
+        const phoneKeys = ['phone', 'mobile', 'number', 'phone number', 'contact number', 'mobile number'];
+        let name = 'Unknown';
+        let phone = '0000000000';
+        let foundNameKey = '';
+        let foundPhoneKey = '';
+        // Find Name
+        for (const key of nameKeys) {
+            if (normalizedRow[key]) {
+                name = String(normalizedRow[key]).trim();
+                // Find the original key to exclude it from additional_data
+                foundNameKey = Object.keys(row).find(k => k.toLowerCase().trim() === key) || '';
+                break;
+            }
+        }
+        // Find Phone
+        for (const key of phoneKeys) {
+            if (normalizedRow[key]) {
+                phone = String(normalizedRow[key]).trim().replace(/[^\d+]/g, '');
+                foundPhoneKey = Object.keys(row).find(k => k.toLowerCase().trim() === key) || '';
+                break;
+            }
+        }
+        // Capture everything else as additional_data
+        const additional_data = {};
+        Object.keys(row).forEach(key => {
+            if (key !== foundNameKey && key !== foundPhoneKey) {
+                additional_data[key] = row[key];
+            }
+        });
+        let safeAdditionalData = null;
+        if (Object.keys(additional_data).length > 0) {
+            // Strip out incompatible data types (like Date objects or undefined) to prevent Prisma Json crashes
+            safeAdditionalData = JSON.parse(JSON.stringify(additional_data));
+        }
         return {
             business_owner_id: ownerId,
             telecaller_id: telecallerId || null,
-            name: String(name).trim(),
-            phone: String(phone).trim().replace(/[^\d+]/g, '') // Keep digits and + only
+            name,
+            phone,
+            additional_data: safeAdditionalData
         };
     };
     postAssignLeads = async (req, res) => {

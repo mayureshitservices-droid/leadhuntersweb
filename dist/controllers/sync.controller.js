@@ -6,7 +6,11 @@ import { ociClient } from '../config/oci.js';
 import path from 'path';
 import crypto from 'crypto';
 // Setup disk storage to prevent memory buffering (OOM issues)
-const upload = multer({ dest: 'temp_uploads/' }).single('recording');
+const tempDir = path.join(process.cwd(), 'temp_uploads');
+if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+}
+const upload = multer({ dest: tempDir }).single('recording');
 export class SyncController {
     syncCallLog = async (req, res) => {
         try {
@@ -23,7 +27,7 @@ export class SyncController {
             }
             // Update lead status only if outcome is provided
             if (outcome && outcome !== 'PENDING') {
-                const formattedOutcome = outcome.toUpperCase().replace(' ', '_');
+                const formattedOutcome = outcome.toUpperCase().replace(/ /g, '_');
                 await prisma.lead.update({
                     where: { id: lead_id },
                     data: { status: formattedOutcome }
@@ -52,7 +56,7 @@ export class SyncController {
                     data: {
                         duration_seconds: duration_seconds ? parseInt(duration_seconds, 10) : existingLog.duration_seconds,
                         call_status: call_status || existingLog.call_status,
-                        outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(' ', '_') : existingLog.outcome,
+                        outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(/ /g, '_') : existingLog.outcome,
                         notes: notes || existingLog.notes,
                         local_log_id: local_log_id ? local_log_id.toString() : existingLog.local_log_id
                     }
@@ -68,7 +72,7 @@ export class SyncController {
                         local_log_id: local_log_id ? local_log_id.toString() : null,
                         duration_seconds: duration_seconds ? parseInt(duration_seconds, 10) : 0,
                         call_status: call_status || 'UNKNOWN',
-                        outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(' ', '_') : null,
+                        outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(/ /g, '_') : null,
                         notes: notes || null
                     }
                 });
