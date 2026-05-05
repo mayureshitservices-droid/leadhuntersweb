@@ -36,10 +36,12 @@ import webRoutes from './routes/web.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import leadsRoutes from './routes/leads.routes.js';
 import syncRoutes from './routes/sync.routes.js';
+import appRoutes from './routes/app.routes.js';
 
 app.use('/', webRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/v1', leadsRoutes);
 app.use('/api/v1', syncRoutes);
+app.use('/api/app', appRoutes);
 
 export default app;

@@ -344,14 +344,33 @@ export class WebController {
         return res.redirect(`/owner?upload=error&msg=missing_columns&headers=${encodeURIComponent(allHeaders)}`);
       }
 
-      // Batch process to prevent "Payload Too Large" errors when dealing with many columns/rows
-      const BATCH_SIZE = 500;
+      // Upsert logic: Create new leads, and for existing phone numbers (recurring customers),
+      // reset status to PENDING so telecallers can call them again in the new cycle.
+      // All historical call logs and recordings for existing leads remain completely untouched.
+      const BATCH_SIZE = 100;
       for (let i = 0; i < leadsToInsert.length; i += BATCH_SIZE) {
         const batch = leadsToInsert.slice(i, i + BATCH_SIZE);
-        await prisma.lead.createMany({
-          data: batch,
-          skipDuplicates: true
-        });
+        await Promise.all(
+          batch.map(lead =>
+            prisma.lead.upsert({
+              where: {
+                business_owner_id_phone: {
+                  business_owner_id: lead.business_owner_id,
+                  phone: lead.phone
+                }
+              },
+              // If the lead is NEW — create it fresh
+              create: lead,
+              // If the lead ALREADY EXISTS (recurring customer) — reset it for a new call cycle
+              update: {
+                status: 'PENDING',
+                telecaller_id: null,
+                name: lead.name,
+                additional_data: lead.additional_data
+              }
+            })
+          )
+        );
       }
 
       safeUnlink(filePath);
