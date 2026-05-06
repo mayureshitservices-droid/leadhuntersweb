@@ -661,6 +661,8 @@ export class WebController {
       console.error('Error updating assignments:', error);
       res.status(500).json({ error: 'Internal server error.' });
     }
+  };
+
   deleteCampaignLeads = async (req: AuthRequest, res: Response) => {
     try {
       const ownerId = req.user!.id;
