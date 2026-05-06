@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middlewares/auth.middleware.js';
 import bcrypt from 'bcrypt';
 import { prisma } from '../config/db.js';
 import fs from 'fs';
@@ -15,7 +16,7 @@ const safeUnlink = (filePath: string) => {
 };
 
 export class WebController {
-  
+
   getLogin = (req: Request, res: Response) => {
     if (req.session.user) {
       return this.dashboardRedirect(req, res);
@@ -34,12 +35,12 @@ export class WebController {
 
       const isMatch = await bcrypt.compare(password, user.password_hash);
       if (!isMatch) {
-         return res.render('login', { error: 'Invalid credentials' });
+        return res.render('login', { error: 'Invalid credentials' });
       }
 
       // Telecallers primarily use Android App
       if (user.role === 'TELECALLER') {
-         return res.render('login', { error: 'Telecallers please use the Android app to login.' });
+        return res.render('login', { error: 'Telecallers please use the Android app to login.' });
       }
 
       req.session.user = {
@@ -78,168 +79,168 @@ export class WebController {
   };
 
   getSuperAdminDashboard = async (req: Request, res: Response) => {
-     const user = req.session.user!;
-     // Fetch needed data for Admin
-     const businessOwners = await prisma.user.findMany({ where: { role: 'BUSINESS_OWNER' } });
-     const telecallers = await prisma.user.findMany({ where: { role: 'TELECALLER' } });
+    const user = req.session.user!;
+    // Fetch needed data for Admin
+    const businessOwners = await prisma.user.findMany({ where: { role: 'BUSINESS_OWNER' } });
+    const telecallers = await prisma.user.findMany({ where: { role: 'TELECALLER' } });
 
-     res.render('admin_dashboard', {
-        user,
-        businessOwners,
-        telecallers
-     });
+    res.render('admin_dashboard', {
+      user,
+      businessOwners,
+      telecallers
+    });
   };
 
   getOwnerDashboard = async (req: Request, res: Response) => {
-     const user = req.session.user!;
-     const ownerId = user.id;
-     
-     const stats = {
-        total: await prisma.lead.count({ where: { business_owner_id: ownerId } }),
-        pending: await prisma.lead.count({ where: { business_owner_id: ownerId, status: 'PENDING' } }),
-        answered: await prisma.lead.count({ where: { business_owner_id: ownerId, status: { not: 'PENDING' } } })
-     };
+    const user = req.session.user!;
+    const ownerId = user.id;
 
-     let uploadMsg = null;
-     let errorMsg = null;
+    const stats = {
+      total: await prisma.lead.count({ where: { business_owner_id: ownerId } }),
+      pending: await prisma.lead.count({ where: { business_owner_id: ownerId, status: 'PENDING' } }),
+      answered: await prisma.lead.count({ where: { business_owner_id: ownerId, status: { not: 'PENDING' } } })
+    };
 
-     if (req.query.upload === 'success') uploadMsg = 'Leads uploaded successfully!';
-     if (req.query.upload === 'error') {
-        const foundHeaders = req.query.headers ? String(req.query.headers) : null;
-        if (req.query.msg === 'invalid_file_type') {
-           errorMsg = 'Invalid file type. Please upload CSV or Excel.';
-        } else if (req.query.msg === 'missing_columns') {
-           errorMsg = `Failed to upload: Missing "Name" or "Phone" columns. Found headers: [${foundHeaders || 'None'}]`;
-        } else if (req.query.msg === 'empty_file') {
-           errorMsg = 'The uploaded file is empty.';
-        } else {
-           errorMsg = 'Failed to upload leads. Please check your data format.';
+    let uploadMsg = null;
+    let errorMsg = null;
+
+    if (req.query.upload === 'success') uploadMsg = 'Leads uploaded successfully!';
+    if (req.query.upload === 'error') {
+      const foundHeaders = req.query.headers ? String(req.query.headers) : null;
+      if (req.query.msg === 'invalid_file_type') {
+        errorMsg = 'Invalid file type. Please upload CSV or Excel.';
+      } else if (req.query.msg === 'missing_columns') {
+        errorMsg = `Failed to upload: Missing "Name" or "Phone" columns. Found headers: [${foundHeaders || 'None'}]`;
+      } else if (req.query.msg === 'empty_file') {
+        errorMsg = 'The uploaded file is empty.';
+      } else {
+        errorMsg = 'Failed to upload leads. Please check your data format.';
+      }
+    }
+
+    let assignMsg = null;
+    let assignError = null;
+    if (req.query.assign === 'success') {
+      const count = req.query.count || '0';
+      assignMsg = `Successfully assigned ${count} lead(s) to the selected telecaller!`;
+    }
+    if (req.query.assign === 'error') {
+      assignError = req.query.msg === 'no_telecaller'
+        ? 'Please select a telecaller before assigning.'
+        : 'Failed to assign leads. Please try again.';
+    }
+
+    // Fetch telecallers assigned to this business owner
+    const assignments = await prisma.telecallerAssignment.findMany({
+      where: { business_owner_id: ownerId },
+      include: { telecaller: { select: { id: true, name: true, device_alias: true, last_seen: true } } }
+    });
+    const telecallers = assignments.map(a => ({
+      id: a.telecaller.id,
+      name: a.telecaller.device_alias || a.telecaller.name,
+      last_seen: a.telecaller.last_seen
+    }));
+
+    const leads = await prisma.lead.findMany({
+      where: { business_owner_id: ownerId },
+      orderBy: { created_at: 'desc' },
+      take: 100,
+      include: { telecaller: { select: { name: true, device_alias: true } } }
+    });
+
+    const callLogs = await prisma.callLog.findMany({
+      where: {
+        lead: {
+          business_owner_id: ownerId
         }
-     }
+      },
+      include: {
+        lead: { select: { name: true, phone: true, status: true } },
+        telecaller: { select: { name: true, device_alias: true } }
+      },
+      orderBy: { created_at: 'desc' },
+      take: 50
+    });
 
-     let assignMsg = null;
-     let assignError = null;
-     if (req.query.assign === 'success') {
-        const count = req.query.count || '0';
-        assignMsg = `Successfully assigned ${count} lead(s) to the selected telecaller!`;
-     }
-     if (req.query.assign === 'error') {
-        assignError = req.query.msg === 'no_telecaller'
-           ? 'Please select a telecaller before assigning.'
-           : 'Failed to assign leads. Please try again.';
-     }
-
-     // Fetch telecallers assigned to this business owner
-      const assignments = await prisma.telecallerAssignment.findMany({
-         where: { business_owner_id: ownerId },
-         include: { telecaller: { select: { id: true, name: true, device_alias: true, last_seen: true } } }
-      });
-      const telecallers = assignments.map(a => ({
-         id: a.telecaller.id,
-         name: a.telecaller.device_alias || a.telecaller.name,
-         last_seen: a.telecaller.last_seen
-      }));
-
-     const leads = await prisma.lead.findMany({
-        where: { business_owner_id: ownerId },
-        orderBy: { created_at: 'desc' },
-        take: 100,
-        include: { telecaller: { select: { name: true, device_alias: true } } }
-     });
-
-     const callLogs = await prisma.callLog.findMany({
-        where: {
-           lead: {
-              business_owner_id: ownerId
-           }
-        },
-        include: {
-           lead: { select: { name: true, phone: true, status: true } },
-           telecaller: { select: { name: true, device_alias: true } }
-        },
-        orderBy: { created_at: 'desc' },
-        take: 50
-      });
-
-      // Performance Stats Logic
-      const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const callLogsPerformance = await prisma.callLog.findMany({
-        where: { lead: { business_owner_id: ownerId }, created_at: { gte: startOfMonth } },
-        select: { telecaller_id: true, outcome: true, call_status: true, duration_seconds: true, created_at: true }
-      });
-      const perf: Record<string, any> = {};
-      telecallers.forEach(tc => {
-        perf[tc.id] = { 
-          id: tc.id, 
-          name: tc.name, 
-          last_seen: tc.last_seen,
-          daily: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 }, 
-          monthly: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 } 
-        };
-      });
-      callLogsPerformance.forEach(log => {
-        if (!perf[log.telecaller_id]) return;
-        const isToday = log.created_at >= startOfToday;
-        const status = log.call_status?.toUpperCase() || 'UNKNOWN';
-        perf[log.telecaller_id].monthly.total++;
-        perf[log.telecaller_id].monthly.talkTime += log.duration_seconds;
-        if (status.includes('ANSWERED')) perf[log.telecaller_id].monthly.answered++;
-        else if (status.includes('MISSED')) perf[log.telecaller_id].monthly.missed++;
-        else if (status.includes('REJECTED') || status.includes('CANCELLED')) perf[log.telecaller_id].monthly.rejected++;
-        if (isToday) {
-          perf[log.telecaller_id].daily.total++;
-          perf[log.telecaller_id].daily.talkTime += log.duration_seconds;
-          if (status.includes('ANSWERED')) perf[log.telecaller_id].daily.answered++;
-          else if (status.includes('MISSED')) perf[log.telecaller_id].daily.missed++;
-          else if (status.includes('REJECTED') || status.includes('CANCELLED')) perf[log.telecaller_id].daily.rejected++;
-        }
-      });
-      const formatTime = (s: number) => {
-        const h = Math.floor(s / 3600);
-        const m = Math.floor((s % 3600) / 60);
-        return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    // Performance Stats Logic
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const callLogsPerformance = await prisma.callLog.findMany({
+      where: { lead: { business_owner_id: ownerId }, created_at: { gte: startOfMonth } },
+      select: { telecaller_id: true, outcome: true, call_status: true, duration_seconds: true, created_at: true }
+    });
+    const perf: Record<string, any> = {};
+    telecallers.forEach(tc => {
+      perf[tc.id] = {
+        id: tc.id,
+        name: tc.name,
+        last_seen: tc.last_seen,
+        daily: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 },
+        monthly: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 }
       };
-      const telecallerPerformance = Object.values(perf).map(p => ({
-        ...p,
-        daily: { ...p.daily, talkTimeFormatted: formatTime(p.daily.talkTime) },
-        monthly: { ...p.monthly, talkTimeFormatted: formatTime(p.monthly.talkTime) }
-      }));
+    });
+    callLogsPerformance.forEach(log => {
+      if (!perf[log.telecaller_id]) return;
+      const isToday = log.created_at >= startOfToday;
+      const status = log.call_status?.toUpperCase() || 'UNKNOWN';
+      perf[log.telecaller_id].monthly.total++;
+      perf[log.telecaller_id].monthly.talkTime += log.duration_seconds;
+      if (status.includes('ANSWERED')) perf[log.telecaller_id].monthly.answered++;
+      else if (status.includes('MISSED')) perf[log.telecaller_id].monthly.missed++;
+      else if (status.includes('REJECTED') || status.includes('CANCELLED')) perf[log.telecaller_id].monthly.rejected++;
+      if (isToday) {
+        perf[log.telecaller_id].daily.total++;
+        perf[log.telecaller_id].daily.talkTime += log.duration_seconds;
+        if (status.includes('ANSWERED')) perf[log.telecaller_id].daily.answered++;
+        else if (status.includes('MISSED')) perf[log.telecaller_id].daily.missed++;
+        else if (status.includes('REJECTED') || status.includes('CANCELLED')) perf[log.telecaller_id].daily.rejected++;
+      }
+    });
+    const formatTime = (s: number) => {
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    };
+    const telecallerPerformance = Object.values(perf).map(p => ({
+      ...p,
+      daily: { ...p.daily, talkTimeFormatted: formatTime(p.daily.talkTime) },
+      monthly: { ...p.monthly, talkTimeFormatted: formatTime(p.monthly.talkTime) }
+    }));
 
-      // Fetch Campaign Data
-      const campaignLeads = await prisma.lead.findMany({
-        where: { business_owner_id: ownerId },
-        select: { file_name: true, status: true }
-      });
-      const campaignMap: Record<string, any> = {};
-      campaignLeads.forEach(lead => {
-        const name = lead.file_name || 'Legacy Upload';
-        if (!campaignMap[name]) {
-          campaignMap[name] = { name, total: 0, processed: 0, pending: 0 };
-        }
-        campaignMap[name].total++;
-        if (lead.status === 'PENDING') {
-          campaignMap[name].pending++;
-        } else {
-          campaignMap[name].processed++;
-        }
-      });
-      const campaigns = Object.values(campaignMap);
+    // Fetch Campaign Data
+    const campaignLeads = await prisma.lead.findMany({
+      where: { business_owner_id: ownerId },
+      select: { file_name: true, status: true }
+    });
+    const campaignMap: Record<string, any> = {};
+    campaignLeads.forEach(lead => {
+      const name = lead.file_name || 'Legacy Upload';
+      if (!campaignMap[name]) {
+        campaignMap[name] = { name, total: 0, processed: 0, pending: 0 };
+      }
+      campaignMap[name].total++;
+      if (lead.status === 'PENDING') {
+        campaignMap[name].pending++;
+      } else {
+        campaignMap[name].processed++;
+      }
+    });
+    const campaigns = Object.values(campaignMap);
 
-      res.render('owner_dashboard', {
-         user,
-         stats,
-         uploadMsg,
-         errorMsg,
-         assignMsg,
-         assignError,
-         leads,
-         telecallers,
-         callLogs,
-         telecallerPerformance,
-         campaigns
-      });
+    res.render('owner_dashboard', {
+      user,
+      stats,
+      uploadMsg,
+      errorMsg,
+      assignMsg,
+      assignError,
+      leads,
+      telecallers,
+      callLogs,
+      telecallerPerformance,
+      campaigns
+    });
   };
 
   exportCallLogs = async (req: Request, res: Response) => {
@@ -329,7 +330,8 @@ export class WebController {
 
     const ownerId = req.session.user!.id;
     const filePath = req.file.path;
-    const fileExt = path.extname(req.file.originalname).toLowerCase();
+    const fileName = req.file.originalname;
+    const fileExt = path.extname(fileName).toLowerCase();
 
     try {
       let results: any[] = [];
@@ -417,10 +419,10 @@ export class WebController {
   private normalizeLead = (row: any, ownerId: string, telecallerId?: string) => {
     // Normalize keys to lowercase for easier lookup
     const normalizedRow: any = {};
-    
+
     Object.keys(row).forEach(key => {
-       const normalizedKey = key.toLowerCase().trim();
-       normalizedRow[normalizedKey] = row[key];
+      const normalizedKey = key.toLowerCase().trim();
+      normalizedRow[normalizedKey] = row[key];
     });
 
     const nameKeys = ['name', 'full name', 'customer name', 'client name', 'lead name'];
@@ -465,11 +467,11 @@ export class WebController {
     }
 
     return {
-       business_owner_id: ownerId,
-       telecaller_id: telecallerId || null,
-       name,
-       phone,
-       additional_data: safeAdditionalData
+      business_owner_id: ownerId,
+      telecaller_id: telecallerId || null,
+      name,
+      phone,
+      additional_data: safeAdditionalData
     } as any;
   };
 
