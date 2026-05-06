@@ -56,6 +56,7 @@ model User {
   phone         String?
   payment_terms Int?
   status        String   @default("Active")
+  last_seen     DateTime?
   created_at    DateTime @default(now())
 
   // Relations
@@ -86,8 +87,10 @@ model Lead {
   name              String
   phone             String
   status            LeadStatus @default(PENDING)
+  file_name         String?    @default("Legacy Upload")
   additional_data   Json?
   created_at        DateTime   @default(now())
+  updated_at        DateTime   @updatedAt @default(now())
 
   // Relations
   business_owner User      @relation("OwnerLeads", fields: [business_owner_id], references: [id], onDelete: Cascade)
@@ -95,6 +98,13 @@ model Lead {
   call_logs      CallLog[]
 
   @@unique([business_owner_id, phone])
+}
+
+model DeletedLead {
+  id                String   @id @default(uuid())
+  lead_id           String
+  business_owner_id String
+  deleted_at        DateTime @default(now())
 }
 
 model CallLog {

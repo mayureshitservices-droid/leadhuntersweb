@@ -84,4 +84,50 @@ export class AuthController {
     }
   };
 
+  heartbeat = async (req: any, res: Response) => {
+    try {
+       const id = req.user?.id;
+       if (!id) return res.status(401).json({ error: 'Unauthorized' });
+
+       await prisma.user.update({
+          where: { id },
+          data: { last_seen: new Date() }
+       });
+
+       // Dynamically import io to avoid circular dependency
+       const { io } = await import('../index.js');
+       
+       const assignments = await prisma.telecallerAssignment.findMany({
+          where: { telecaller_id: id },
+          select: { business_owner_id: true }
+       });
+
+       // Fetch deleted leads for this telecaller's owners
+       const ownerIds = assignments.map(a => a.business_owner_id);
+       const recentlyDeleted = await prisma.deletedLead.findMany({
+          where: { 
+            business_owner_id: { in: ownerIds },
+            deleted_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+          },
+          select: { lead_id: true }
+       });
+
+       assignments.forEach(a => {
+          io.to(`dashboard_${a.business_owner_id}`).emit('presence_update', {
+             telecallerId: id,
+             isOnline: true,
+             lastSeen: new Date()
+          });
+       });
+
+       res.json({ 
+         success: true,
+         deletedLeads: recentlyDeleted.map(d => d.lead_id)
+       });
+    } catch (error) {
+       console.error("Heartbeat Error:", error);
+       res.status(500).json({ error: 'Internal server error during heartbeat.' });
+    }
+  };
+
 }
