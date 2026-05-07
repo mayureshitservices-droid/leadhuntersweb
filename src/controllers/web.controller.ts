@@ -211,13 +211,23 @@ export class WebController {
     // Fetch Campaign Data
     const campaignLeads = await prisma.lead.findMany({
       where: { business_owner_id: ownerId },
-      select: { file_name: true, status: true }
+      select: { 
+        file_name: true, 
+        status: true,
+        telecaller: { select: { name: true, device_alias: true } }
+      }
     });
     const campaignMap: Record<string, any> = {};
     campaignLeads.forEach(lead => {
       const name = lead.file_name || 'Legacy Upload';
       if (!campaignMap[name]) {
-        campaignMap[name] = { name, total: 0, processed: 0, pending: 0 };
+        campaignMap[name] = { 
+          name, 
+          total: 0, 
+          processed: 0, 
+          pending: 0,
+          telecallers: new Set<string>()
+        };
       }
       campaignMap[name].total++;
       if (lead.status === 'PENDING') {
@@ -225,8 +235,16 @@ export class WebController {
       } else {
         campaignMap[name].processed++;
       }
+      if (lead.telecaller) {
+        campaignMap[name].telecallers.add(lead.telecaller.device_alias || lead.telecaller.name);
+      } else {
+        campaignMap[name].telecallers.add('Unassigned');
+      }
     });
-    const campaigns = Object.values(campaignMap);
+    const campaigns = Object.values(campaignMap).map(c => ({
+      ...c,
+      telecallerNames: Array.from(c.telecallers).join(', ')
+    }));
 
     res.render('owner_dashboard', {
       user,
