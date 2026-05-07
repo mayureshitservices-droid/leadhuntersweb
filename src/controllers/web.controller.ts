@@ -683,9 +683,9 @@ export class WebController {
     }
   };
 
-  deleteCampaignLeads = async (req: AuthRequest, res: Response) => {
+  deleteCampaignLeads = async (req: Request, res: Response) => {
     try {
-      const ownerId = req.user!.id;
+      const ownerId = req.session.user!.id;
       const { fileName } = req.body;
 
       if (!fileName) {
