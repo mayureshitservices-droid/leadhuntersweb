@@ -452,10 +452,10 @@
               <th class="px-6 py-3 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody id="campaigns-table-body" class="bg-white divide-y divide-gray-100">
             <% if (locals.campaigns && campaigns.length > 0) { %>
               <% campaigns.forEach(function(camp) { %>
-                <tr class="hover:bg-gray-50 transition-colors animate-fade-in-up">
+                <tr class="campaign-row hover:bg-gray-50 transition-colors animate-fade-in-up">
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                       <div class="w-10 h-10 rounded-xl bg-container flex items-center justify-center text-primary mr-4">
@@ -501,8 +501,37 @@
         </table>
       </div>
 
+      <!-- Campaign Pagination Footer -->
+      <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+            Showing <span id="campaigns-start-range" class="text-gray-900">0</span> to <span id="campaigns-end-range" class="text-gray-900">0</span> of <span id="campaigns-total-count" class="text-gray-900">0</span> campaigns
+          </div>
+          
+          <!-- Desktop Pagination -->
+          <div class="hidden md:flex items-center gap-2">
+            <button id="campaigns-prev-page" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <div id="campaigns-page-numbers" class="flex items-center gap-1">
+              <!-- Page numbers injected here -->
+            </div>
+            <button id="campaigns-next-page" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+
+          <!-- Mobile Load More -->
+          <div class="md:hidden w-full">
+            <button id="campaigns-load-more" class="w-full py-3 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all">
+              Load More Campaigns
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Mobile Card View (Campaigns) -->
-      <div class="md:hidden divide-y divide-gray-100">
+      <div id="campaigns-cards-container" class="md:hidden divide-y divide-gray-100">
          <% if (locals.campaigns && campaigns.length > 0) { %>
            <% campaigns.forEach(function(camp) { %>
               <div class="campaign-card p-5 hover:bg-gray-50 transition-colors">
@@ -671,10 +700,12 @@
 <script>
   let currentPage = 1;
   let leadsPage = 1;
+  let campaignsPage = 1;
   const rowsPerPage = 5;
   const mobilePerPage = 5;
   let currentMobilePage = 1;
   let currentLeadsMobilePage = 1;
+  let currentCampaignsMobilePage = 1;
   
   // Global function for Alpine to open lead details
   window.openLeadDetails = function(leadData, interactionStatus = null) {
@@ -785,15 +816,55 @@
     }
   }
 
+  function updateCampaignsPagination() {
+    const tbody = document.getElementById('campaigns-table-body');
+    const mobileContainer = document.getElementById('campaigns-cards-container');
+    if (!tbody || !mobileContainer) return;
+    const rows = Array.from(tbody.querySelectorAll('.campaign-row'));
+    const totalCount = rows.length;
+    const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
+    const start = (campaignsPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    rows.forEach((row, index) => { row.style.display = (index >= start && index < end) ? '' : 'none'; });
+    const cards = Array.from(mobileContainer.querySelectorAll('.campaign-card'));
+    const mobileEnd = currentCampaignsMobilePage * mobilePerPage;
+    cards.forEach((card, index) => { card.style.display = index < mobileEnd ? '' : 'none'; });
+    const loadMoreBtn = document.getElementById('campaigns-load-more');
+    if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= cards.length ? 'none' : '';
+    if (document.getElementById('campaigns-start-range')) document.getElementById('campaigns-start-range').innerText = totalCount === 0 ? 0 : start + 1;
+    if (document.getElementById('campaigns-end-range')) document.getElementById('campaigns-end-range').innerText = Math.min(end, totalCount);
+    if (document.getElementById('campaigns-total-count')) document.getElementById('campaigns-total-count').innerText = totalCount;
+    if (document.getElementById('campaigns-prev-page')) document.getElementById('campaigns-prev-page').disabled = campaignsPage === 1;
+    if (document.getElementById('campaigns-next-page')) document.getElementById('campaigns-next-page').disabled = campaignsPage === totalPages;
+    const pageContainer = document.getElementById('campaigns-page-numbers');
+    if (pageContainer) {
+        pageContainer.innerHTML = '';
+        let startPage = Math.max(1, campaignsPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        for (let i = startPage; i <= endPage; i++) {
+          const btn = document.createElement('button');
+          btn.className = `w-8 h-8 rounded-lg text-xs font-bold ${i === campaignsPage ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-100'}`;
+          btn.innerText = i;
+          btn.onclick = () => { campaignsPage = i; updateCampaignsPagination(); };
+          pageContainer.appendChild(btn);
+        }
+    }
+  }
+
   document.getElementById('prev-page').onclick = () => { if (currentPage > 1) { currentPage--; updatePagination(); } };
   document.getElementById('next-page').onclick = () => { currentPage++; updatePagination(); };
   document.getElementById('activity-load-more').onclick = () => { currentMobilePage++; updatePagination(); };
   document.getElementById('leads-prev-page').onclick = () => { if (leadsPage > 1) { leadsPage--; updateLeadsPagination(); } };
   document.getElementById('leads-next-page').onclick = () => { leadsPage++; updateLeadsPagination(); };
   document.getElementById('leads-load-more').onclick = () => { currentLeadsMobilePage++; updateLeadsPagination(); };
+  
+  if (document.getElementById('campaigns-prev-page')) document.getElementById('campaigns-prev-page').onclick = () => { if (campaignsPage > 1) { campaignsPage--; updateCampaignsPagination(); } };
+  if (document.getElementById('campaigns-next-page')) document.getElementById('campaigns-next-page').onclick = () => { campaignsPage++; updateCampaignsPagination(); };
+  if (document.getElementById('campaigns-load-more')) document.getElementById('campaigns-load-more').onclick = () => { currentCampaignsMobilePage++; updateCampaignsPagination(); };
 
   updatePagination();
   updateLeadsPagination();
+  updateCampaignsPagination();
 
   socket.emit('join_dashboard', '<%= user.id %>');
   socket.on('new_call_log', (data) => {
