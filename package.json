@@ -7,7 +7,7 @@
     "dev": "nodemon --watch src --ext ts,ejs --exec \"tsx src/index.ts\"",
     "tailwind:build": "tailwindcss -i src/public/css/input.css -o src/public/css/tailwind.css",
     "tailwind:watch": "tailwindcss -i src/public/css/input.css -o src/public/css/tailwind.css --watch",
-    "build": "npm run tailwind:build && tsc",
+    "build": "npm run tailwind:build && tsc && cp -r src/views dist/ && cp -r src/public dist/ && mkdir -p dist/config && cp src/config/app-version.json dist/config/",
     "start": "node dist/index.js",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",

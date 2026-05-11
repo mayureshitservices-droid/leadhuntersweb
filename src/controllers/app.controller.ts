@@ -10,9 +10,13 @@ export class AppController {
   getVersion = async (req: Request, res: Response) => {
     try {
       // Try finding it in the src directory relative to the project root
-      let configPath = path.join(process.cwd(), 'src/config/app-version.json');
+      // Try dist first (Production), then src (Development)
+      let configPath = path.join(process.cwd(), 'dist/config/app-version.json');
       
-      // Fallback in case process.cwd() is different
+      if (!fs.existsSync(configPath)) {
+        configPath = path.join(process.cwd(), 'src/config/app-version.json');
+      }
+
       if (!fs.existsSync(configPath)) {
         configPath = path.join(__dirname, '../../src/config/app-version.json');
       }
