@@ -19,6 +19,7 @@ export class AppController {
 
       const configData = fs.readFileSync(configPath, 'utf8');
       const versionInfo = JSON.parse(configData);
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.json(versionInfo);
     } catch (error) {
       console.error('Error reading app version:', error);
