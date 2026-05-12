@@ -19,9 +19,10 @@ export class LeadController {
           telecaller_id: req.user.id,
           status: 'PENDING'
         },
-        orderBy: {
-          sort_order: 'asc' 
-        },
+        orderBy: [
+          { created_at: 'desc' },
+          { sort_order: 'asc' }
+        ],
         take: limit,
         skip: offset,
         include: {

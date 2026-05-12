@@ -143,7 +143,10 @@ export class WebController {
 
     const leads = await prisma.lead.findMany({
       where: { business_owner_id: ownerId },
-      orderBy: { sort_order: 'asc' },
+      orderBy: [
+        { created_at: 'desc' },
+        { sort_order: 'asc' }
+      ],
       take: 100,
       include: { telecaller: { select: { name: true, device_alias: true } } }
     });
