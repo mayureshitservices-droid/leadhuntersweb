@@ -43,13 +43,15 @@ export class SyncController {
         return res.status(404).json({ error: 'Lead not found' });
       }
 
-      // Update lead status only if outcome is provided
-      if (outcome && outcome !== 'PENDING') {
-        const formattedOutcome = outcome.toUpperCase().replace(/ /g, '_');
+      // Update lead status based on outcome OR call_status as fallback
+      const finalStatus = (outcome && outcome !== 'PENDING') ? outcome : call_status;
+      if (finalStatus && finalStatus !== 'PENDING') {
+        const formattedStatus = finalStatus.toUpperCase().replace(/ /g, '_');
         await prisma.lead.update({
           where: { id: lead_id },
-          data: { status: formattedOutcome as any }
+          data: { status: formattedStatus as any }
         });
+        console.log(`[SyncCallLog] Updated Lead ${lead_id} status to: ${formattedStatus}`);
       }
 
       // ONLY match on local_log_id — never fall back to time-window search
