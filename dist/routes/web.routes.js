@@ -21,6 +21,7 @@ router.get('/owner', requireRole('BUSINESS_OWNER'), webController.getOwnerDashbo
 router.post('/owner/upload-leads', requireRole('BUSINESS_OWNER'), upload.single('leads_file'), webController.postUploadLeads);
 router.post('/owner/assign-leads', requireRole('BUSINESS_OWNER'), webController.postAssignLeads);
 router.get('/owner/export-calls', requireRole('BUSINESS_OWNER'), webController.exportCallLogs);
+router.post('/owner/delete-campaign-leads', requireRole('BUSINESS_OWNER'), webController.deleteCampaignLeads);
 // Assignments
 router.get('/admin/telecaller-assignments/:id', requireRole('SUPER_ADMIN'), webController.getTelecallerAssignments);
 router.post('/admin/update-telecaller-assignments', requireRole('SUPER_ADMIN'), webController.updateTelecallerAssignments);

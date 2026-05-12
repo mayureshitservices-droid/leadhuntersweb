@@ -18,7 +18,13 @@ export class AppController {
       }
 
       if (!fs.existsSync(configPath)) {
-        configPath = path.join(__dirname, '../../src/config/app-version.json');
+        console.warn(`[AppController] Config file NOT FOUND at: ${configPath}. Returning default safety version.`);
+        return res.json({
+          versionCode: 1,
+          versionName: "1.0.0",
+          downloadUrl: "",
+          mandatory: false
+        });
       }
 
       const configData = fs.readFileSync(configPath, 'utf8');
@@ -27,7 +33,12 @@ export class AppController {
       res.json(versionInfo);
     } catch (error) {
       console.error('Error reading app version:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      res.json({
+        versionCode: 1,
+        versionName: "1.0.0",
+        downloadUrl: "",
+        mandatory: false
+      });
     }
   };
 }

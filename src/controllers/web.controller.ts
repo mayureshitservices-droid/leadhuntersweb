@@ -143,7 +143,7 @@ export class WebController {
 
     const leads = await prisma.lead.findMany({
       where: { business_owner_id: ownerId },
-      orderBy: { created_at: 'desc' },
+      orderBy: { sort_order: 'asc' },
       take: 100,
       include: { telecaller: { select: { name: true, device_alias: true } } }
     });
@@ -211,9 +211,10 @@ export class WebController {
     // Fetch Campaign Data
     const campaignLeads = await prisma.lead.findMany({
       where: { business_owner_id: ownerId },
-      select: { 
-        file_name: true, 
+      select: {
+        file_name: true,
         status: true,
+        created_at: true,
         telecaller: { select: { name: true, device_alias: true } }
       }
     });
@@ -221,11 +222,12 @@ export class WebController {
     campaignLeads.forEach(lead => {
       const name = lead.file_name || 'Legacy Upload';
       if (!campaignMap[name]) {
-        campaignMap[name] = { 
-          name, 
-          total: 0, 
-          processed: 0, 
+        campaignMap[name] = {
+          name,
+          total: 0,
+          processed: 0,
           pending: 0,
+          latest_upload: lead.created_at,
           telecallers: new Set<string>()
         };
       }
@@ -235,6 +237,12 @@ export class WebController {
       } else {
         campaignMap[name].processed++;
       }
+
+      // Track the latest upload time for this campaign name
+      if (lead.created_at > campaignMap[name].latest_upload) {
+        campaignMap[name].latest_upload = lead.created_at;
+      }
+
       if (lead.telecaller) {
         campaignMap[name].telecallers.add(lead.telecaller.device_alias || lead.telecaller.name);
       } else {
@@ -243,8 +251,11 @@ export class WebController {
     });
     const campaigns = Object.values(campaignMap).map(c => ({
       ...c,
-      telecallerNames: Array.from(c.telecallers).join(', ')
-    }));
+      telecallerNames: Array.from(c.telecallers).join(', '),
+      uploadedAtFormatted: new Date(c.latest_upload).toLocaleString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    })).sort((a, b) => b.latest_upload.getTime() - a.latest_upload.getTime());
 
     res.render('owner_dashboard', {
       user,
@@ -398,8 +409,9 @@ export class WebController {
       for (let i = 0; i < leadsToInsert.length; i += BATCH_SIZE) {
         const batch = leadsToInsert.slice(i, i + BATCH_SIZE);
         await Promise.all(
-          batch.map(lead =>
-            prisma.lead.upsert({
+          batch.map((lead, index) => {
+            const actualIndex = i + index + 1;
+            return prisma.lead.upsert({
               where: {
                 business_owner_id_phone: {
                   business_owner_id: ownerId,
@@ -412,16 +424,18 @@ export class WebController {
                 phone: lead.phone,
                 status: 'PENDING',
                 file_name: fileName,
-                additional_data: lead.additional_data
+                additional_data: lead.additional_data,
+                sort_order: actualIndex
               },
               update: {
                 status: 'PENDING',
                 file_name: fileName,
                 name: lead.name,
-                additional_data: lead.additional_data
+                additional_data: lead.additional_data,
+                sort_order: actualIndex
               }
             })
-          )
+          })
         );
       }
 

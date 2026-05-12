@@ -104,13 +104,13 @@ export class AuthController {
 
        // Fetch deleted leads for this telecaller's owners
        const ownerIds = assignments.map(a => a.business_owner_id);
-       const recentlyDeleted = await prisma.deletedLead.findMany({
+        const recentlyDeleted = await prisma.deletedLead.findMany({
           where: { 
             business_owner_id: { in: ownerIds },
-            deleted_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
+            deleted_at: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Extended to 7 days for better sync reliability
           },
           select: { lead_id: true }
-       });
+        });
 
        assignments.forEach(a => {
           io.to(`dashboard_${a.business_owner_id}`).emit('presence_update', {

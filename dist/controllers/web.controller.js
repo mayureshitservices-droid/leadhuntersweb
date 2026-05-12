@@ -120,15 +120,16 @@ export class WebController {
         // Fetch telecallers assigned to this business owner
         const assignments = await prisma.telecallerAssignment.findMany({
             where: { business_owner_id: ownerId },
-            include: { telecaller: { select: { id: true, name: true, device_alias: true } } }
+            include: { telecaller: { select: { id: true, name: true, device_alias: true, last_seen: true } } }
         });
         const telecallers = assignments.map(a => ({
             id: a.telecaller.id,
-            name: a.telecaller.device_alias || a.telecaller.name
+            name: a.telecaller.device_alias || a.telecaller.name,
+            last_seen: a.telecaller.last_seen
         }));
         const leads = await prisma.lead.findMany({
             where: { business_owner_id: ownerId },
-            orderBy: { created_at: 'desc' },
+            orderBy: { sort_order: 'asc' },
             take: 100,
             include: { telecaller: { select: { name: true, device_alias: true } } }
         });
@@ -155,7 +156,13 @@ export class WebController {
         });
         const perf = {};
         telecallers.forEach(tc => {
-            perf[tc.id] = { id: tc.id, name: tc.name, daily: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 }, monthly: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 } };
+            perf[tc.id] = {
+                id: tc.id,
+                name: tc.name,
+                last_seen: tc.last_seen,
+                daily: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 },
+                monthly: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 }
+            };
         });
         callLogsPerformance.forEach(log => {
             if (!perf[log.telecaller_id])
@@ -191,6 +198,54 @@ export class WebController {
             daily: { ...p.daily, talkTimeFormatted: formatTime(p.daily.talkTime) },
             monthly: { ...p.monthly, talkTimeFormatted: formatTime(p.monthly.talkTime) }
         }));
+        // Fetch Campaign Data
+        const campaignLeads = await prisma.lead.findMany({
+            where: { business_owner_id: ownerId },
+            select: {
+                file_name: true,
+                status: true,
+                created_at: true,
+                telecaller: { select: { name: true, device_alias: true } }
+            }
+        });
+        const campaignMap = {};
+        campaignLeads.forEach(lead => {
+            const name = lead.file_name || 'Legacy Upload';
+            if (!campaignMap[name]) {
+                campaignMap[name] = {
+                    name,
+                    total: 0,
+                    processed: 0,
+                    pending: 0,
+                    latest_upload: lead.created_at,
+                    telecallers: new Set()
+                };
+            }
+            campaignMap[name].total++;
+            if (lead.status === 'PENDING') {
+                campaignMap[name].pending++;
+            }
+            else {
+                campaignMap[name].processed++;
+            }
+            // Track the latest upload time for this campaign name
+            if (lead.created_at > campaignMap[name].latest_upload) {
+                campaignMap[name].latest_upload = lead.created_at;
+            }
+            if (lead.telecaller) {
+                campaignMap[name].telecallers.add(lead.telecaller.device_alias || lead.telecaller.name);
+            }
+            else {
+                campaignMap[name].telecallers.add('Unassigned');
+            }
+        });
+        const campaigns = Object.values(campaignMap).map(c => ({
+            ...c,
+            telecallerNames: Array.from(c.telecallers).join(', '),
+            uploadedAtFormatted: new Date(c.latest_upload).toLocaleString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            })
+        })).sort((a, b) => b.latest_upload.getTime() - a.latest_upload.getTime());
         res.render('owner_dashboard', {
             user,
             stats,
@@ -201,7 +256,8 @@ export class WebController {
             leads,
             telecallers,
             callLogs,
-            telecallerPerformance
+            telecallerPerformance,
+            campaigns
         });
     };
     exportCallLogs = async (req, res) => {
@@ -279,7 +335,8 @@ export class WebController {
         }
         const ownerId = req.session.user.id;
         const filePath = req.file.path;
-        const fileExt = path.extname(req.file.originalname).toLowerCase();
+        const fileName = req.file.originalname;
+        const fileExt = path.extname(fileName).toLowerCase();
         try {
             let results = [];
             if (fileExt === '.csv') {
@@ -319,27 +376,36 @@ export class WebController {
             }
             // Upsert logic: Create new leads, and for existing phone numbers (recurring customers),
             // reset status to PENDING so telecallers can call them again in the new cycle.
-            // All historical call logs and recordings for existing leads remain completely untouched.
             const BATCH_SIZE = 100;
             for (let i = 0; i < leadsToInsert.length; i += BATCH_SIZE) {
                 const batch = leadsToInsert.slice(i, i + BATCH_SIZE);
-                await Promise.all(batch.map(lead => prisma.lead.upsert({
-                    where: {
-                        business_owner_id_phone: {
-                            business_owner_id: lead.business_owner_id,
-                            phone: lead.phone
+                await Promise.all(batch.map((lead, index) => {
+                    const actualIndex = i + index + 1;
+                    return prisma.lead.upsert({
+                        where: {
+                            business_owner_id_phone: {
+                                business_owner_id: ownerId,
+                                phone: lead.phone
+                            }
+                        },
+                        create: {
+                            business_owner_id: ownerId,
+                            name: lead.name,
+                            phone: lead.phone,
+                            status: 'PENDING',
+                            file_name: fileName,
+                            additional_data: lead.additional_data,
+                            sort_order: actualIndex
+                        },
+                        update: {
+                            status: 'PENDING',
+                            file_name: fileName,
+                            name: lead.name,
+                            additional_data: lead.additional_data,
+                            sort_order: actualIndex
                         }
-                    },
-                    // If the lead is NEW — create it fresh
-                    create: lead,
-                    // If the lead ALREADY EXISTS (recurring customer) — reset it for a new call cycle
-                    update: {
-                        status: 'PENDING',
-                        telecaller_id: null,
-                        name: lead.name,
-                        additional_data: lead.additional_data
-                    }
-                })));
+                    });
+                }));
             }
             safeUnlink(filePath);
             res.redirect('/owner?upload=success');
@@ -565,6 +631,44 @@ export class WebController {
         catch (error) {
             console.error('Error updating assignments:', error);
             res.status(500).json({ error: 'Internal server error.' });
+        }
+    };
+    deleteCampaignLeads = async (req, res) => {
+        try {
+            const ownerId = req.session.user.id;
+            const { fileName } = req.body;
+            if (!fileName) {
+                return res.status(400).json({ error: 'File name is required' });
+            }
+            // Find leads to be deleted (only PENDING)
+            const leadsToDelete = await prisma.lead.findMany({
+                where: {
+                    business_owner_id: ownerId,
+                    file_name: fileName,
+                    status: 'PENDING'
+                },
+                select: { id: true }
+            });
+            if (leadsToDelete.length === 0) {
+                return res.json({ success: true, count: 0 });
+            }
+            const leadIds = leadsToDelete.map(l => l.id);
+            // Record deletions for the Android Heartbeat
+            await prisma.deletedLead.createMany({
+                data: leadIds.map(id => ({
+                    lead_id: id,
+                    business_owner_id: ownerId
+                }))
+            });
+            // Perform deletion
+            await prisma.lead.deleteMany({
+                where: { id: { in: leadIds } }
+            });
+            res.json({ success: true, count: leadIds.length });
+        }
+        catch (error) {
+            console.error('Delete Campaign Error:', error);
+            res.status(500).json({ error: 'Failed to delete leads' });
         }
     };
 }

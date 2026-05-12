@@ -20,7 +20,7 @@ export class LeadController {
           status: 'PENDING'
         },
         orderBy: {
-          created_at: 'asc' // Oldest pending first
+          sort_order: 'asc' 
         },
         take: limit,
         skip: offset,

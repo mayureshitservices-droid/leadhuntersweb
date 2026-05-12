@@ -445,6 +445,7 @@
           <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm border-b border-gray-200">
             <tr>
               <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Campaign / File Name</th>
+              <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Uploaded At</th>
               <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Telecaller</th>
               <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total</th>
               <th class="px-6 py-3 text-center text-[10px] font-bold text-green-600 uppercase tracking-wider">Processed</th>
@@ -466,6 +467,9 @@
                         <p class="text-[10px] text-gray-400 font-medium">Batch Upload</p>
                       </div>
                     </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">
+                    <%= camp.uploadedAtFormatted %>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-xs font-bold text-gray-700 max-w-[150px] truncate" title="<%= camp.telecallerNames %>">
@@ -542,7 +546,7 @@
                     </div>
                     <div>
                       <h4 class="text-base font-bold text-gray-900 capitalize"><%= camp.name %></h4>
-                      <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider"><%= camp.telecallerNames %></p>
+                      <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider"><%= camp.telecallerNames %> • <%= camp.uploadedAtFormatted %></p>
                     </div>
                   </div>
                   <button 

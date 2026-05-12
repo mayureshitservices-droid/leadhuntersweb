@@ -11,7 +11,16 @@
 <body class="bg-bg-light font-sans text-gray-800 antialiased min-h-screen flex" 
   x-data="{ 
     sidebarOpen: false, 
-    activeTab: new URLSearchParams(window.location.search).get('tab') || (window.location.pathname === '/owner' ? 'upload' : 'customers')
+    selectedAgent: 'all',
+    activeTab: new URLSearchParams(window.location.search).get('tab') || (window.location.pathname === '/owner' ? 'upload' : 'customers'),
+    leadModalOpen: false,
+    selectedLead: null,
+    displayStatus: '',
+    exportStart: '',
+    exportEnd: '',
+    deleteModalOpen: false,
+    campaignToDelete: '',
+    pendingLeadsToDelete: 0
   }"
   x-init="$watch('activeTab', value => {
     if (window.location.pathname === '/admin' || window.location.pathname === '/owner') {
@@ -43,14 +52,7 @@
     </div>
 
     <nav class="flex-1 px-4 py-6 space-y-2 relative">
-      <a href="/" class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group"
-         :class="window.location.pathname === '/' ? 'bg-container text-primary' : 'text-gray-600 hover:bg-container hover:text-primary'">
-        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-        </svg>
-        <span class="font-medium">Dashboard Overview</span>
-      </a>
-      
+
       <% if (user.role === 'SUPER_ADMIN') { %>
       <div class="pt-4 pb-2 px-4 shadow-sm">
         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Management</span>
@@ -75,6 +77,22 @@
         </svg>
         <span class="font-medium">Telecallers</span>
       </a>
+
+      <!-- Download Android App -->
+      <div class="pt-4 pb-2 px-4">
+        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">App</span>
+      </div>
+      <a href="/downloads/app-release.apk" download
+         class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 hover:border-emerald-300 hover:shadow-sm">
+        <svg class="w-5 h-5 mr-3 group-hover:scale-110 group-hover:-translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18.5l-6-6m6 6l6-6m-6 6V3" />
+        </svg>
+        <div class="flex flex-col">
+          <span class="font-semibold text-sm leading-tight">Download App</span>
+          <span class="text-[10px] text-emerald-500 font-medium">Android APK</span>
+        </div>
+      </a>
+
       <% } else if (user.role === 'BUSINESS_OWNER') { %>
       <div class="pt-4 pb-2 px-4 shadow-sm">
         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Leads & Activity</span>
@@ -97,7 +115,27 @@
         <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
-        <span class="font-medium">Live Activity</span>
+        <span class="font-medium">Detailed View</span>
+      </a>
+
+      <a href="/owner?tab=performance" 
+         @click.prevent="if(window.location.pathname === '/owner') { activeTab = 'performance'; sidebarOpen = false; } else { window.location.href = '/owner?tab=performance' }"
+         class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group"
+         :class="(window.location.pathname === '/owner' && activeTab === 'performance') ? 'bg-container text-primary shadow-sm' : 'text-gray-600 hover:bg-container hover:text-primary'">
+        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2" />
+        </svg>
+        <span class="font-medium">Performance</span>
+      </a>
+
+      <a href="/owner?tab=campaigns" 
+         @click.prevent="if(window.location.pathname === '/owner') { activeTab = 'campaigns'; sidebarOpen = false; } else { window.location.href = '/owner?tab=campaigns' }"
+         class="flex items-center px-4 py-3 rounded-xl transition-all duration-200 group"
+         :class="(window.location.pathname === '/owner' && activeTab === 'campaigns') ? 'bg-container text-primary shadow-sm' : 'text-gray-600 hover:bg-container hover:text-primary'">
+        <svg class="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+        <span class="font-medium">Campaigns</span>
       </a>
       <% } %>
 
@@ -128,4 +166,4 @@
   <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
   <% } %>
 
-    <main class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8 w-full max-w-7xl mx-auto">
+    <main class="flex-1 overflow-y-auto px-2 sm:px-6 lg:px-8 py-8 w-full max-w-7xl mx-auto">

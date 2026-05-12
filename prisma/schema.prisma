@@ -89,6 +89,7 @@ model Lead {
   status            LeadStatus @default(PENDING)
   file_name         String?    @default("Legacy Upload")
   additional_data   Json?
+  sort_order        Int        @default(0)
   created_at        DateTime   @default(now())
   updated_at        DateTime   @updatedAt @default(now())
 
