@@ -107,8 +107,12 @@
 
       <!-- Leads Table -->
       <div class="bg-white shadow rounded-2xl overflow-hidden border border-gray-100">
-          <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
-            <h3 class="text-lg leading-6 font-bold text-gray-900">Your Leads</h3>
+          <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h3 class="text-lg leading-6 font-bold text-gray-900 whitespace-nowrap">Your Leads</h3>
+            <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm group focus-within:border-primary/30 transition-all">
+              <svg class="h-3.5 w-3.5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input type="text" id="leads-search" placeholder="Search..." class="bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs font-bold text-gray-700 placeholder-gray-400 p-0 w-32 md:w-40">
+            </div>
           </div>
           
           <div class="overflow-x-auto relative hidden-scrollbar border-t border-gray-100 hidden md:block">
@@ -230,20 +234,28 @@
     <!-- Detailed View Feed -->
     <div x-show="activeTab === 'activity'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="md:bg-white md:shadow md:rounded-2xl overflow-hidden md:border md:border-gray-100">
       <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h3 class="text-lg leading-6 font-bold text-gray-900">Detailed View</h3>
+        <h3 class="text-lg leading-6 font-bold text-gray-900 whitespace-nowrap">Detailed View</h3>
         
-        <!-- Date Filter & Export -->
-        <div class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
-          <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl">
-            <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">From</span>
-            <input type="date" x-model="exportStart" class="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 p-0">
+        <!-- Filter Row: Search, Date Filter & Export -->
+        <div class="flex flex-wrap items-center justify-end gap-3 w-full md:w-auto">
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm group focus-within:border-primary/30 transition-all">
+            <svg class="h-3.5 w-3.5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input type="text" 
+                   id="detailed-view-search" 
+                   placeholder="Search..." 
+                   class="bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs font-bold text-gray-700 placeholder-gray-400 p-0 w-32 md:w-40">
           </div>
-          <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-xl">
+
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">From</span>
+            <input type="date" x-model="exportStart" class="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 p-0 cursor-pointer">
+          </div>
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">To</span>
-            <input type="date" x-model="exportEnd" class="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 p-0">
+            <input type="date" x-model="exportEnd" class="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 p-0 cursor-pointer">
           </div>
           <a :href="`/owner/export-calls?start=${exportStart}&end=${exportEnd}`" 
-             class="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-200 hover:-translate-y-0.5 active:translate-y-0">
+             class="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-200 hover:-translate-y-0.5 active:translate-y-0 shrink-0">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
             Export Excel
           </a>
@@ -437,7 +449,11 @@
     <!-- Campaigns Section -->
     <div x-show="activeTab === 'campaigns'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="md:bg-white md:shadow md:rounded-2xl overflow-hidden md:border md:border-gray-100">
       <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h3 class="text-lg leading-6 font-bold text-gray-900">Campaign Management</h3>
+        <h3 class="text-lg leading-6 font-bold text-gray-900 whitespace-nowrap">Campaign Management</h3>
+        <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm group focus-within:border-primary/30 transition-all">
+          <svg class="h-3.5 w-3.5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <input type="text" id="campaigns-search" placeholder="Search..." class="bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs font-bold text-gray-700 placeholder-gray-400 p-0 w-32 md:w-40">
+        </div>
       </div>
 
       <div class="overflow-x-auto relative hidden-scrollbar border-t border-gray-100 hidden md:block">
@@ -739,16 +755,73 @@
     const tbody = document.getElementById('live-calls');
     const mobileContainer = document.getElementById('activity-cards-container');
     if (!tbody || !mobileContainer) return;
+
+    const searchQuery = (document.getElementById('detailed-view-search')?.value || '').toLowerCase().trim();
     const rows = Array.from(tbody.querySelectorAll('tr:not(#empty-state)'));
-    const totalCount = rows.length;
+    const cards = Array.from(mobileContainer.querySelectorAll('.activity-card'));
+
+    // 1. Filter rows and cards based on search query
+    const filteredRows = rows.filter(row => {
+      if (!searchQuery) return true;
+      
+      // Check visible text
+      const visibleText = row.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+
+      // Check hidden JSON data (additional_data)
+      try {
+        const leadData = JSON.parse(row.getAttribute('data-lead') || '{}');
+        if (leadData.file_name && leadData.file_name.toLowerCase().includes(searchQuery)) return true;
+        if (leadData.additional_data) {
+          const values = Object.values(leadData.additional_data).join(' ').toLowerCase();
+          const keys = Object.keys(leadData.additional_data).join(' ').toLowerCase();
+          if (values.includes(searchQuery) || keys.includes(searchQuery)) return true;
+        }
+      } catch (e) {}
+      
+      return false;
+    });
+
+    // Handle mobile cards filtering (same logic)
+    const filteredCards = cards.filter(card => {
+      if (!searchQuery) return true;
+      const visibleText = card.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+
+      try {
+        const leadData = JSON.parse(card.getAttribute('data-lead') || '{}');
+        if (leadData.file_name && leadData.file_name.toLowerCase().includes(searchQuery)) return true;
+        if (leadData.additional_data) {
+          const values = Object.values(leadData.additional_data).join(' ').toLowerCase();
+          const keys = Object.keys(leadData.additional_data).join(' ').toLowerCase();
+          if (values.includes(searchQuery) || keys.includes(searchQuery)) return true;
+        }
+      } catch (e) {}
+      return false;
+    });
+
+    // 2. Apply visibility to ALL rows first
+    rows.forEach(row => row.style.display = 'none');
+    cards.forEach(card => card.style.display = 'none');
+
+    const totalCount = filteredRows.length;
     const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
     if (currentPage > totalPages) currentPage = totalPages;
+
     const start = (currentPage - 1) * rowsPerPage;
     const end = start + rowsPerPage;
-    rows.forEach((row, index) => { row.style.display = (index >= start && index < end) ? '' : 'none'; });
-    const cards = Array.from(mobileContainer.querySelectorAll('.activity-card'));
+
+    // 3. Only show the slice of the FILTERED set
+    filteredRows.forEach((row, index) => {
+      if (index >= start && index < end) row.style.display = '';
+    });
+
     const mobileEnd = currentMobilePage * mobilePerPage;
-    cards.forEach((card, index) => { card.style.display = index < mobileEnd ? '' : 'none'; });
+    filteredCards.forEach((card, index) => {
+      if (index < mobileEnd) card.style.display = '';
+    });
+
+    // Update Date Headers for mobile
     const headers = Array.from(mobileContainer.querySelectorAll('.date-header'));
     headers.forEach(header => {
        let next = header.nextElementSibling;
@@ -759,13 +832,16 @@
        }
        header.style.display = hasVisible ? '' : 'none';
     });
+
     const loadMoreBtn = document.getElementById('activity-load-more');
-    if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= cards.length ? 'none' : '';
+    if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= filteredCards.length ? 'none' : '';
+    
     if (document.getElementById('start-range')) document.getElementById('start-range').innerText = totalCount === 0 ? 0 : start + 1;
     if (document.getElementById('end-range')) document.getElementById('end-range').innerText = Math.min(end, totalCount);
     if (document.getElementById('total-count')) document.getElementById('total-count').innerText = totalCount;
     if (document.getElementById('prev-page')) document.getElementById('prev-page').disabled = currentPage === 1;
     if (document.getElementById('next-page')) document.getElementById('next-page').disabled = currentPage === totalPages;
+
     const pageContainer = document.getElementById('page-numbers');
     if (pageContainer) {
         pageContainer.innerHTML = '';
@@ -785,15 +861,59 @@
     const tbody = document.getElementById('leads-table-body');
     const mobileContainer = document.getElementById('leads-cards-container');
     if (!tbody || !mobileContainer) return;
+    
+    const searchQuery = (document.getElementById('leads-search')?.value || '').toLowerCase().trim();
     const rows = Array.from(tbody.querySelectorAll('.lead-row'));
-    const totalCount = rows.length;
+    const cards = Array.from(mobileContainer.querySelectorAll('.lead-card'));
+    
+    const filteredRows = rows.filter(row => {
+      if (!searchQuery) return true;
+      const visibleText = row.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      try {
+        const leadData = JSON.parse(row.getAttribute('data-lead') || '{}');
+        if (leadData.additional_data) {
+          const values = Object.values(leadData.additional_data).join(' ').toLowerCase();
+          const keys = Object.keys(leadData.additional_data).join(' ').toLowerCase();
+          if (values.includes(searchQuery) || keys.includes(searchQuery)) return true;
+        }
+      } catch (e) {}
+      return false;
+    });
+
+    const filteredCards = cards.filter(card => {
+      if (!searchQuery) return true;
+      const visibleText = card.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      try {
+        const leadData = JSON.parse(card.getAttribute('data-lead') || '{}');
+        if (leadData.additional_data) {
+          const values = Object.values(leadData.additional_data).join(' ').toLowerCase();
+          const keys = Object.keys(leadData.additional_data).join(' ').toLowerCase();
+          if (values.includes(searchQuery) || keys.includes(searchQuery)) return true;
+        }
+      } catch (e) {}
+      return false;
+    });
+
+    rows.forEach(row => row.style.display = 'none');
+    cards.forEach(card => card.style.display = 'none');
+
+    const totalCount = filteredRows.length;
     const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
+    if (leadsPage > totalPages) leadsPage = totalPages;
+    
     const start = (leadsPage - 1) * rowsPerPage;
     const end = start + rowsPerPage;
-    rows.forEach((row, index) => { row.style.display = (index >= start && index < end) ? '' : 'none'; });
-    const cards = Array.from(mobileContainer.querySelectorAll('.lead-card'));
+    
+    filteredRows.forEach((row, index) => {
+      if (index >= start && index < end) row.style.display = '';
+    });
+    
     const mobileEnd = currentLeadsMobilePage * mobilePerPage;
-    cards.forEach((card, index) => { card.style.display = index < mobileEnd ? '' : 'none'; });
+    filteredCards.forEach((card, index) => {
+      if (index < mobileEnd) card.style.display = '';
+    });
     const loadMoreBtn = document.getElementById('leads-load-more');
     if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= cards.length ? 'none' : '';
     if (document.getElementById('leads-start-range')) document.getElementById('leads-start-range').innerText = totalCount === 0 ? 0 : start + 1;
@@ -820,15 +940,43 @@
     const tbody = document.getElementById('campaigns-table-body');
     const mobileContainer = document.getElementById('campaigns-cards-container');
     if (!tbody || !mobileContainer) return;
+    
+    const searchQuery = (document.getElementById('campaigns-search')?.value || '').toLowerCase().trim();
     const rows = Array.from(tbody.querySelectorAll('.campaign-row'));
-    const totalCount = rows.length;
+    const cards = Array.from(mobileContainer.querySelectorAll('.campaign-card'));
+    
+    const filteredRows = rows.filter(row => {
+      if (!searchQuery) return true;
+      const visibleText = row.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      return false;
+    });
+
+    const filteredCards = cards.filter(card => {
+      if (!searchQuery) return true;
+      const visibleText = card.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      return false;
+    });
+
+    rows.forEach(row => row.style.display = 'none');
+    cards.forEach(card => card.style.display = 'none');
+
+    const totalCount = filteredRows.length;
     const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
+    if (campaignsPage > totalPages) campaignsPage = totalPages;
+    
     const start = (campaignsPage - 1) * rowsPerPage;
     const end = start + rowsPerPage;
-    rows.forEach((row, index) => { row.style.display = (index >= start && index < end) ? '' : 'none'; });
-    const cards = Array.from(mobileContainer.querySelectorAll('.campaign-card'));
+    
+    filteredRows.forEach((row, index) => {
+      if (index >= start && index < end) row.style.display = '';
+    });
+    
     const mobileEnd = currentCampaignsMobilePage * mobilePerPage;
-    cards.forEach((card, index) => { card.style.display = index < mobileEnd ? '' : 'none'; });
+    filteredCards.forEach((card, index) => {
+      if (index < mobileEnd) card.style.display = '';
+    });
     const loadMoreBtn = document.getElementById('campaigns-load-more');
     if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= cards.length ? 'none' : '';
     if (document.getElementById('campaigns-start-range')) document.getElementById('campaigns-start-range').innerText = totalCount === 0 ? 0 : start + 1;
@@ -861,6 +1009,42 @@
   if (document.getElementById('campaigns-prev-page')) document.getElementById('campaigns-prev-page').onclick = () => { if (campaignsPage > 1) { campaignsPage--; updateCampaignsPagination(); } };
   if (document.getElementById('campaigns-next-page')) document.getElementById('campaigns-next-page').onclick = () => { campaignsPage++; updateCampaignsPagination(); };
   if (document.getElementById('campaigns-load-more')) document.getElementById('campaigns-load-more').onclick = () => { currentCampaignsMobilePage++; updateCampaignsPagination(); };
+
+  const searchInput = document.getElementById('detailed-view-search');
+  if (searchInput) {
+    let debounceTimer;
+    searchInput.oninput = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        currentPage = 1;
+        updatePagination();
+      }, 300);
+    };
+  }
+
+  const leadsSearchInput = document.getElementById('leads-search');
+  if (leadsSearchInput) {
+    let debounceTimer;
+    leadsSearchInput.oninput = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        leadsPage = 1;
+        updateLeadsPagination();
+      }, 300);
+    };
+  }
+
+  const campaignsSearchInput = document.getElementById('campaigns-search');
+  if (campaignsSearchInput) {
+    let debounceTimer;
+    campaignsSearchInput.oninput = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        campaignsPage = 1;
+        updateCampaignsPagination();
+      }, 300);
+    };
+  }
 
   updatePagination();
   updateLeadsPagination();
