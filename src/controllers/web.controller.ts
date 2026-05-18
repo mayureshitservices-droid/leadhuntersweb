@@ -164,48 +164,67 @@ export class WebController {
 
     // Performance Stats Logic
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    let perfStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    let perfEnd = new Date();
+    
+    if (req.query.perfStart) {
+      perfStart = new Date(req.query.perfStart as string);
+    }
+    if (req.query.perfEnd) {
+      perfEnd = new Date(req.query.perfEnd as string);
+      perfEnd.setHours(23, 59, 59, 999);
+    }
+
     const callLogsPerformance = await prisma.callLog.findMany({
-      where: { lead: { business_owner_id: ownerId }, created_at: { gte: startOfMonth } },
+      where: { lead: { business_owner_id: ownerId }, created_at: { gte: perfStart, lte: perfEnd } },
       select: { telecaller_id: true, outcome: true, call_status: true, duration_seconds: true, created_at: true }
     });
+
+    const leadsAssignedCounts = await prisma.lead.groupBy({
+      by: ['telecaller_id'],
+      where: { business_owner_id: ownerId, telecaller_id: { in: telecallers.map(tc => tc.id) } },
+      _count: { _all: true }
+    });
+    const assignedMap: Record<string, number> = {};
+    leadsAssignedCounts.forEach(l => {
+      if (l.telecaller_id) assignedMap[l.telecaller_id] = l._count._all;
+    });
+
     const perf: Record<string, any> = {};
     telecallers.forEach(tc => {
       perf[tc.id] = {
         id: tc.id,
         name: tc.name,
         last_seen: tc.last_seen,
-        daily: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 },
-        monthly: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 }
+        leadsAssigned: assignedMap[tc.id] || 0,
+        total: 0, 
+        answered: 0, 
+        missed: 0, 
+        rejected: 0, 
+        talkTime: 0 
       };
     });
+
     callLogsPerformance.forEach(log => {
       if (!perf[log.telecaller_id]) return;
-      const isToday = log.created_at >= startOfToday;
       const status = log.call_status?.toUpperCase() || 'UNKNOWN';
-      perf[log.telecaller_id].monthly.total++;
-      perf[log.telecaller_id].monthly.talkTime += log.duration_seconds;
-      if (status.includes('ANSWERED')) perf[log.telecaller_id].monthly.answered++;
-      else if (status.includes('MISSED')) perf[log.telecaller_id].monthly.missed++;
-      else if (status.includes('REJECTED') || status.includes('CANCELLED')) perf[log.telecaller_id].monthly.rejected++;
-      if (isToday) {
-        perf[log.telecaller_id].daily.total++;
-        perf[log.telecaller_id].daily.talkTime += log.duration_seconds;
-        if (status.includes('ANSWERED')) perf[log.telecaller_id].daily.answered++;
-        else if (status.includes('MISSED')) perf[log.telecaller_id].daily.missed++;
-        else if (status.includes('REJECTED') || status.includes('CANCELLED')) perf[log.telecaller_id].daily.rejected++;
-      }
+      perf[log.telecaller_id].total++;
+      perf[log.telecaller_id].talkTime += log.duration_seconds;
+      if (status.includes('ANSWERED')) perf[log.telecaller_id].answered++;
+      else if (status.includes('MISSED')) perf[log.telecaller_id].missed++;
+      else if (status.includes('REJECTED') || status.includes('CANCELLED')) perf[log.telecaller_id].rejected++;
     });
+
     const formatTime = (s: number) => {
       const h = Math.floor(s / 3600);
       const m = Math.floor((s % 3600) / 60);
-      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+      const secs = s % 60;
+      return h > 0 ? `${h}h ${m}m ${secs}s` : `${m}m ${secs}s`;
     };
+
     const telecallerPerformance = Object.values(perf).map(p => ({
       ...p,
-      daily: { ...p.daily, talkTimeFormatted: formatTime(p.daily.talkTime) },
-      monthly: { ...p.monthly, talkTimeFormatted: formatTime(p.monthly.talkTime) }
+      talkTimeFormatted: formatTime(p.talkTime)
     }));
 
     // Fetch Campaign Data
@@ -257,7 +276,9 @@ export class WebController {
       telecallers,
       callLogs,
       telecallerPerformance,
-      campaigns
+      campaigns,
+      perfStart: perfStart.toISOString().split('T')[0],
+      perfEnd: perfEnd.toISOString().split('T')[0]
     });
   };
 
