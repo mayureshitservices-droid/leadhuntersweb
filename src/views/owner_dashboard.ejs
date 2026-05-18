@@ -683,6 +683,35 @@
              <div class="p-8 text-center text-gray-400 italic font-medium">No active telecallers found</div>
           <% } %>
        </div>
+
+       <!-- Performance Pagination Footer -->
+       <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+         <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+           <div class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+             Showing <span id="performance-start-range" class="text-gray-900">0</span> to <span id="performance-end-range" class="text-gray-900">0</span> of <span id="performance-total-count" class="text-gray-900">0</span> agents
+           </div>
+           
+           <!-- Desktop Pagination -->
+           <div class="hidden md:flex items-center gap-2">
+             <button id="performance-prev-page" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+             </button>
+             <div id="performance-page-numbers" class="flex items-center gap-1">
+               <!-- Page numbers injected here -->
+             </div>
+             <button id="performance-next-page" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg>
+             </button>
+           </div>
+
+           <!-- Mobile Load More -->
+           <div class="md:hidden w-full">
+             <button id="performance-load-more" class="w-full py-3 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all">
+               Load More Agents
+             </button>
+           </div>
+         </div>
+       </div>
     </div>
   </div>
 </div>
@@ -691,11 +720,13 @@
   let currentPage = 1;
   let leadsPage = 1;
   let campaignsPage = 1;
+  let performancePage = 1;
   const rowsPerPage = 5;
   const mobilePerPage = 5;
   let currentMobilePage = 1;
   let currentLeadsMobilePage = 1;
   let currentCampaignsMobilePage = 1;
+  let currentPerformanceMobilePage = 1;
   
   // Global function for Alpine to open lead details
   window.openLeadDetails = function(leadData, interactionStatus = null) {
@@ -1020,28 +1051,92 @@
     };
   }
 
+  function updatePerformancePagination() {
+    const tbody = document.getElementById('performance-table-body');
+    const mobileContainer = document.getElementById('performance-cards-container');
+    if (!tbody || !mobileContainer) return;
+    
+    const searchQuery = (document.getElementById('performance-search')?.value || '').toLowerCase().trim();
+    const rows = Array.from(tbody.querySelectorAll('.perf-row'));
+    const cards = Array.from(mobileContainer.querySelectorAll('.perf-card'));
+    
+    const filteredRows = rows.filter(row => {
+      if (!searchQuery) return true;
+      const visibleText = row.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      return false;
+    });
+
+    const filteredCards = cards.filter(card => {
+      if (!searchQuery) return true;
+      const visibleText = card.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      return false;
+    });
+
+    rows.forEach(row => row.style.display = 'none');
+    cards.forEach(card => card.style.display = 'none');
+
+    const totalCount = filteredRows.length;
+    const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
+    if (performancePage > totalPages) performancePage = totalPages;
+    
+    const start = (performancePage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    
+    filteredRows.forEach((row, index) => {
+      if (index >= start && index < end) row.style.display = '';
+    });
+    
+    const mobileEnd = currentPerformanceMobilePage * mobilePerPage;
+    filteredCards.forEach((card, index) => {
+      if (index < mobileEnd) card.style.display = '';
+    });
+    
+    const loadMoreBtn = document.getElementById('performance-load-more');
+    if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= cards.length ? 'none' : '';
+    
+    if (document.getElementById('performance-start-range')) document.getElementById('performance-start-range').innerText = totalCount === 0 ? 0 : start + 1;
+    if (document.getElementById('performance-end-range')) document.getElementById('performance-end-range').innerText = Math.min(end, totalCount);
+    if (document.getElementById('performance-total-count')) document.getElementById('performance-total-count').innerText = totalCount;
+    if (document.getElementById('performance-prev-page')) document.getElementById('performance-prev-page').disabled = performancePage === 1;
+    if (document.getElementById('performance-next-page')) document.getElementById('performance-next-page').disabled = performancePage === totalPages;
+    
+    const pageContainer = document.getElementById('performance-page-numbers');
+    if (pageContainer) {
+        pageContainer.innerHTML = '';
+        let startPage = Math.max(1, performancePage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        for (let i = startPage; i <= endPage; i++) {
+          const btn = document.createElement('button');
+          btn.className = `w-8 h-8 rounded-lg text-xs font-bold ${i === performancePage ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-100'}`;
+          btn.innerText = i;
+          btn.onclick = () => { performancePage = i; updatePerformancePagination(); };
+          pageContainer.appendChild(btn);
+        }
+    }
+  }
+
+  if (document.getElementById('performance-prev-page')) document.getElementById('performance-prev-page').onclick = () => { if (performancePage > 1) { performancePage--; updatePerformancePagination(); } };
+  if (document.getElementById('performance-next-page')) document.getElementById('performance-next-page').onclick = () => { performancePage++; updatePerformancePagination(); };
+  if (document.getElementById('performance-load-more')) document.getElementById('performance-load-more').onclick = () => { currentPerformanceMobilePage++; updatePerformancePagination(); };
+
   const performanceSearchInput = document.getElementById('performance-search');
   if (performanceSearchInput) {
-    performanceSearchInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase().trim();
-      
-      const rows = document.querySelectorAll('#performance-table-body .perf-row');
-      rows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(query) ? '' : 'none';
-      });
-
-      const cards = document.querySelectorAll('#performance-cards-container .perf-card');
-      cards.forEach(card => {
-        const text = card.innerText.toLowerCase();
-        card.style.display = text.includes(query) ? '' : 'none';
-      });
-    });
+    let debounceTimer;
+    performanceSearchInput.oninput = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        performancePage = 1;
+        updatePerformancePagination();
+      }, 300);
+    };
   }
 
   updatePagination();
   updateLeadsPagination();
   updateCampaignsPagination();
+  updatePerformancePagination();
 
   socket.emit('join_dashboard', '<%= user.id %>');
   socket.on('new_call_log', (data) => {
