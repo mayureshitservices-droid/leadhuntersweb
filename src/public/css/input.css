@@ -1,5 +1,6 @@
 @import "tailwindcss";
-
+@source "../../views";
+@source "../../public";
 @theme {
   --color-primary: #E53935;
   --color-container: #FFEBEE;
