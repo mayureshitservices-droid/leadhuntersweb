@@ -144,7 +144,7 @@ export class WebController {
     const leads = await prisma.lead.findMany({
       where: { business_owner_id: ownerId },
       orderBy: { created_at: 'desc' },
-      take: 100,
+      take: 5,
       include: { telecaller: { select: { name: true, device_alias: true } } }
     });
 
@@ -159,7 +159,7 @@ export class WebController {
         telecaller: { select: { name: true, device_alias: true } }
       },
       orderBy: { created_at: 'desc' },
-      take: 50
+      take: 5
     });
 
     // Performance Stats Logic
@@ -746,6 +746,91 @@ export class WebController {
     } catch (error) {
       console.error('Delete Campaign Error:', error);
       res.status(500).json({ error: 'Failed to delete leads' });
+    }
+  };
+
+  getPaginatedCallLogs = async (req: Request, res: Response) => {
+    try {
+      const ownerId = req.session.user!.id;
+      const page = parseInt(req.query.page as string) || 1;
+      const search = (req.query.search as string || '').trim();
+      const take = 5;
+      const skip = (page - 1) * take;
+
+      const searchWhere: any = {
+        AND: [
+          { lead: { business_owner_id: ownerId } },
+          ...(search ? [{
+            OR: [
+              { lead: { name: { contains: search, mode: 'insensitive' } } },
+              { lead: { phone: { contains: search, mode: 'insensitive' } } },
+              { telecaller: { name: { contains: search, mode: 'insensitive' } } },
+              { telecaller: { device_alias: { contains: search, mode: 'insensitive' } } },
+              { notes: { contains: search, mode: 'insensitive' } },
+              { call_status: { contains: search, mode: 'insensitive' } },
+              { outcome: { contains: search, mode: 'insensitive' } },
+            ]
+          }] : [])
+        ]
+      };
+
+      const callLogs = await prisma.callLog.findMany({
+        where: searchWhere,
+        include: {
+          lead: { select: { name: true, phone: true, status: true } },
+          telecaller: { select: { name: true, device_alias: true } }
+        },
+        orderBy: { created_at: 'desc' },
+        take,
+        skip
+      });
+
+      const totalCount = await prisma.callLog.count({ where: searchWhere });
+
+      res.json({ success: true, data: callLogs, totalCount });
+    } catch (error) {
+      console.error('Error fetching paginated call logs:', error);
+      res.status(500).json({ error: 'Internal server error.' });
+    }
+  };
+
+  getPaginatedLeads = async (req: Request, res: Response) => {
+    try {
+      const ownerId = req.session.user!.id;
+      const page = parseInt(req.query.page as string) || 1;
+      const search = (req.query.search as string || '').trim();
+      const take = 5;
+      const skip = (page - 1) * take;
+
+      const searchWhere: any = {
+        AND: [
+          { business_owner_id: ownerId },
+          ...(search ? [{
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search, mode: 'insensitive' } },
+              { telecaller: { name: { contains: search, mode: 'insensitive' } } },
+              { telecaller: { device_alias: { contains: search, mode: 'insensitive' } } },
+              { file_name: { contains: search, mode: 'insensitive' } },
+            ]
+          }] : [])
+        ]
+      };
+
+      const leads = await prisma.lead.findMany({
+        where: searchWhere,
+        orderBy: { created_at: 'desc' },
+        take,
+        skip,
+        include: { telecaller: { select: { name: true, device_alias: true } } }
+      });
+
+      const totalCount = await prisma.lead.count({ where: searchWhere });
+
+      res.json({ success: true, data: leads, totalCount });
+    } catch (error) {
+      console.error('Error fetching paginated leads:', error);
+      res.status(500).json({ error: 'Internal server error.' });
     }
   };
 

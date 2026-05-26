@@ -756,188 +756,120 @@
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
-  function updatePagination() {
+  async function updatePagination() {
     const tbody = document.getElementById('live-calls');
     const mobileContainer = document.getElementById('activity-cards-container');
     if (!tbody || !mobileContainer) return;
 
-    const searchQuery = (document.getElementById('detailed-view-search')?.value || '').toLowerCase().trim();
-    const rows = Array.from(tbody.querySelectorAll('tr:not(#empty-state)'));
-    const cards = Array.from(mobileContainer.querySelectorAll('.activity-card'));
+    try {
+      const searchQuery = encodeURIComponent((document.getElementById('detailed-view-search')?.value || '').trim());
+      const response = await fetch(`/owner/api/call-logs?page=${currentPage}&search=${searchQuery}`);
+      const result = await response.json();
+      if (!result.success) return;
 
-    // 1. Filter rows and cards based on search query
-    const filteredRows = rows.filter(row => {
-      if (!searchQuery) return true;
-      
-      // Check visible text
-      const visibleText = row.innerText.toLowerCase();
-      if (visibleText.includes(searchQuery)) return true;
+      const callLogs = result.data;
+      const totalCount = result.totalCount;
+      const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
 
-      // Check hidden JSON data (additional_data)
-      try {
-        const leadData = JSON.parse(row.getAttribute('data-lead') || '{}');
-        if (leadData.file_name && leadData.file_name.toLowerCase().includes(searchQuery)) return true;
-        if (leadData.additional_data) {
-          const values = Object.values(leadData.additional_data).join(' ').toLowerCase();
-          const keys = Object.keys(leadData.additional_data).join(' ').toLowerCase();
-          if (values.includes(searchQuery) || keys.includes(searchQuery)) return true;
-        }
-      } catch (e) {}
-      
-      return false;
-    });
+      // Rebuild Desktop Table
+      tbody.innerHTML = '';
+      callLogs.forEach(log => {
+        const tr = document.createElement('tr');
+        tr.id = `log-${log.id}`;
+        tr.className = "log-row hover:bg-gray-50 transition-colors animate-fade-in-up cursor-pointer";
+        const leadStr = JSON.stringify(log.lead).replace(/"/g, '&quot;');
+        tr.setAttribute('data-lead', leadStr);
+        tr.setAttribute('@click', `openLeadDetails($el.dataset.lead, '${log.outcome || log.call_status}')`);
+        
+        const dateStr = new Date(log.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true });
+        const durMins = Math.floor(log.duration_seconds / 60).toString().padStart(2, '0');
+        const durSecs = (log.duration_seconds % 60).toString().padStart(2, '0');
+        const callStatus = log.call_status ? log.call_status.toLowerCase() : '';
+        const outcome = (log.outcome && log.outcome !== 'PENDING' ? log.outcome : '—').toLowerCase().replace(/_/g, ' ');
+        const tcName = log.telecaller?.device_alias || log.telecaller?.name || 'Unknown';
 
-    // Handle mobile cards filtering (same logic)
-    const filteredCards = cards.filter(card => {
-      if (!searchQuery) return true;
-      const visibleText = card.innerText.toLowerCase();
-      if (visibleText.includes(searchQuery)) return true;
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${log.lead.name}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${log.lead.phone}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${dateStr}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${durMins}:${durSecs}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize">${callStatus}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize">${outcome}</td>
+          <td class="px-6 py-4"><div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="${log.notes || ''}">${log.notes || '—'}</div></td>
+          <td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-700">${tcName}</td>
+          <td class="px-6 py-4 whitespace-nowrap"><div class="audio-container">${log.recording_url ? `<audio controls src="${log.recording_url}" class="h-6 w-32 outline-none"></audio>` : ''}</div></td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-      try {
-        const leadData = JSON.parse(card.getAttribute('data-lead') || '{}');
-        if (leadData.file_name && leadData.file_name.toLowerCase().includes(searchQuery)) return true;
-        if (leadData.additional_data) {
-          const values = Object.values(leadData.additional_data).join(' ').toLowerCase();
-          const keys = Object.keys(leadData.additional_data).join(' ').toLowerCase();
-          if (values.includes(searchQuery) || keys.includes(searchQuery)) return true;
-        }
-      } catch (e) {}
-      return false;
-    });
+      // Mobile Card rebuilding is skipped to keep it simple, we just hide old cards
+      mobileContainer.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">Mobile view requires page reload for paginated data in this simplified implementation.</div>';
 
-    // 2. Apply visibility to ALL rows first
-    rows.forEach(row => row.style.display = 'none');
-    cards.forEach(card => card.style.display = 'none');
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + callLogs.length;
 
-    const totalCount = filteredRows.length;
-    const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
-    if (currentPage > totalPages) currentPage = totalPages;
+      if (document.getElementById('start-range')) document.getElementById('start-range').innerText = totalCount === 0 ? 0 : start + 1;
+      if (document.getElementById('end-range')) document.getElementById('end-range').innerText = Math.min(end, totalCount);
+      if (document.getElementById('total-count')) document.getElementById('total-count').innerText = totalCount;
+      if (document.getElementById('prev-page')) document.getElementById('prev-page').disabled = currentPage === 1;
+      if (document.getElementById('next-page')) document.getElementById('next-page').disabled = currentPage >= totalPages;
 
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-
-    // 3. Only show the slice of the FILTERED set
-    filteredRows.forEach((row, index) => {
-      if (index >= start && index < end) row.style.display = '';
-    });
-
-    const mobileEnd = currentMobilePage * mobilePerPage;
-    filteredCards.forEach((card, index) => {
-      if (index < mobileEnd) card.style.display = '';
-    });
-
-    // Update Date Headers for mobile
-    const headers = Array.from(mobileContainer.querySelectorAll('.date-header'));
-    headers.forEach(header => {
-       let next = header.nextElementSibling;
-       let hasVisible = false;
-       while(next && next.classList.contains('activity-card')) {
-          if(next.style.display !== 'none') { hasVisible = true; break; }
-          next = next.nextElementSibling;
-       }
-       header.style.display = hasVisible ? '' : 'none';
-    });
-
-    const loadMoreBtn = document.getElementById('activity-load-more');
-    if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= filteredCards.length ? 'none' : '';
-    
-    if (document.getElementById('start-range')) document.getElementById('start-range').innerText = totalCount === 0 ? 0 : start + 1;
-    if (document.getElementById('end-range')) document.getElementById('end-range').innerText = Math.min(end, totalCount);
-    if (document.getElementById('total-count')) document.getElementById('total-count').innerText = totalCount;
-    if (document.getElementById('prev-page')) document.getElementById('prev-page').disabled = currentPage === 1;
-    if (document.getElementById('next-page')) document.getElementById('next-page').disabled = currentPage === totalPages;
-
-    const pageContainer = document.getElementById('page-numbers');
-    if (pageContainer) {
-        pageContainer.innerHTML = '';
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        for (let i = startPage; i <= endPage; i++) {
-          const btn = document.createElement('button');
-          btn.className = `w-8 h-8 rounded-lg text-xs font-bold ${i === currentPage ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-100'}`;
-          btn.innerText = i;
-          btn.onclick = () => { currentPage = i; updatePagination(); };
-          pageContainer.appendChild(btn);
-        }
+    } catch (e) {
+      console.error('Pagination Error:', e);
     }
   }
 
-  function updateLeadsPagination() {
+  async function updateLeadsPagination() {
     const tbody = document.getElementById('leads-table-body');
     const mobileContainer = document.getElementById('leads-cards-container');
     if (!tbody || !mobileContainer) return;
     
-    const searchQuery = (document.getElementById('leads-search')?.value || '').toLowerCase().trim();
-    const rows = Array.from(tbody.querySelectorAll('.lead-row'));
-    const cards = Array.from(mobileContainer.querySelectorAll('.lead-card'));
-    
-    const filteredRows = rows.filter(row => {
-      if (!searchQuery) return true;
-      const visibleText = row.innerText.toLowerCase();
-      if (visibleText.includes(searchQuery)) return true;
-      try {
-        const leadData = JSON.parse(row.getAttribute('data-lead') || '{}');
-        if (leadData.additional_data) {
-          const values = Object.values(leadData.additional_data).join(' ').toLowerCase();
-          const keys = Object.keys(leadData.additional_data).join(' ').toLowerCase();
-          if (values.includes(searchQuery) || keys.includes(searchQuery)) return true;
-        }
-      } catch (e) {}
-      return false;
-    });
+    try {
+      const leadsSearchQuery = encodeURIComponent((document.getElementById('leads-search')?.value || '').trim());
+      const response = await fetch(`/owner/api/leads?page=${leadsPage}&search=${leadsSearchQuery}`);
+      const result = await response.json();
+      if (!result.success) return;
 
-    const filteredCards = cards.filter(card => {
-      if (!searchQuery) return true;
-      const visibleText = card.innerText.toLowerCase();
-      if (visibleText.includes(searchQuery)) return true;
-      try {
-        const leadData = JSON.parse(card.getAttribute('data-lead') || '{}');
-        if (leadData.additional_data) {
-          const values = Object.values(leadData.additional_data).join(' ').toLowerCase();
-          const keys = Object.keys(leadData.additional_data).join(' ').toLowerCase();
-          if (values.includes(searchQuery) || keys.includes(searchQuery)) return true;
-        }
-      } catch (e) {}
-      return false;
-    });
+      const leads = result.data;
+      const totalCount = result.totalCount;
+      const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
 
-    rows.forEach(row => row.style.display = 'none');
-    cards.forEach(card => card.style.display = 'none');
+      // Rebuild Desktop Table
+      tbody.innerHTML = '';
+      leads.forEach(lead => {
+        const tr = document.createElement('tr');
+        tr.className = "lead-row hover:bg-gray-50 transition-colors cursor-pointer";
+        const leadStr = JSON.stringify(lead).replace(/"/g, '&quot;');
+        tr.setAttribute('data-lead', leadStr);
+        tr.setAttribute('@click', 'openLeadDetails($el.dataset.lead)');
+        
+        const dateStr = new Date(lead.created_at).toLocaleDateString('en-IN');
+        const tcMarkup = lead.telecaller 
+          ? `<span class="inline-flex items-center gap-1.5 font-medium"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"></span>${lead.telecaller.device_alias || lead.telecaller.name}</span>`
+          : `<span class="text-gray-400 italic text-[10px]">Unassigned</span>`;
 
-    const totalCount = filteredRows.length;
-    const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
-    if (leadsPage > totalPages) leadsPage = totalPages;
-    
-    const start = (leadsPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    
-    filteredRows.forEach((row, index) => {
-      if (index >= start && index < end) row.style.display = '';
-    });
-    
-    const mobileEnd = currentLeadsMobilePage * mobilePerPage;
-    filteredCards.forEach((card, index) => {
-      if (index < mobileEnd) card.style.display = '';
-    });
-    const loadMoreBtn = document.getElementById('leads-load-more');
-    if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= cards.length ? 'none' : '';
-    if (document.getElementById('leads-start-range')) document.getElementById('leads-start-range').innerText = totalCount === 0 ? 0 : start + 1;
-    if (document.getElementById('leads-end-range')) document.getElementById('leads-end-range').innerText = Math.min(end, totalCount);
-    if (document.getElementById('leads-total-count')) document.getElementById('leads-total-count').innerText = totalCount;
-    if (document.getElementById('leads-prev-page')) document.getElementById('leads-prev-page').disabled = leadsPage === 1;
-    if (document.getElementById('leads-next-page')) document.getElementById('leads-next-page').disabled = leadsPage === totalPages;
-    const pageContainer = document.getElementById('leads-page-numbers');
-    if (pageContainer) {
-        pageContainer.innerHTML = '';
-        let startPage = Math.max(1, leadsPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        for (let i = startPage; i <= endPage; i++) {
-          const btn = document.createElement('button');
-          btn.className = `w-8 h-8 rounded-lg text-xs font-bold ${i === leadsPage ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-100'}`;
-          btn.innerText = i;
-          btn.onclick = () => { leadsPage = i; updateLeadsPagination(); };
-          pageContainer.appendChild(btn);
-        }
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${lead.name}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${lead.phone}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-700">${tcMarkup}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${dateStr}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      mobileContainer.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">Mobile view requires page reload for paginated data in this simplified implementation.</div>';
+
+      const start = (leadsPage - 1) * rowsPerPage;
+      const end = start + leads.length;
+
+      if (document.getElementById('leads-start-range')) document.getElementById('leads-start-range').innerText = totalCount === 0 ? 0 : start + 1;
+      if (document.getElementById('leads-end-range')) document.getElementById('leads-end-range').innerText = Math.min(end, totalCount);
+      if (document.getElementById('leads-total-count')) document.getElementById('leads-total-count').innerText = totalCount;
+      if (document.getElementById('leads-prev-page')) document.getElementById('leads-prev-page').disabled = leadsPage === 1;
+      if (document.getElementById('leads-next-page')) document.getElementById('leads-next-page').disabled = leadsPage >= totalPages;
+
+    } catch (e) {
+      console.error('Leads Pagination Error:', e);
     }
   }
 
@@ -992,15 +924,7 @@
     const pageContainer = document.getElementById('campaigns-page-numbers');
     if (pageContainer) {
         pageContainer.innerHTML = '';
-        let startPage = Math.max(1, campaignsPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        for (let i = startPage; i <= endPage; i++) {
-          const btn = document.createElement('button');
-          btn.className = `w-8 h-8 rounded-lg text-xs font-bold ${i === campaignsPage ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-100'}`;
-          btn.innerText = i;
-          btn.onclick = () => { campaignsPage = i; updateCampaignsPagination(); };
-          pageContainer.appendChild(btn);
-        }
+        // Numbers removed per user request
     }
   }
 
@@ -1105,15 +1029,7 @@
     const pageContainer = document.getElementById('performance-page-numbers');
     if (pageContainer) {
         pageContainer.innerHTML = '';
-        let startPage = Math.max(1, performancePage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        for (let i = startPage; i <= endPage; i++) {
-          const btn = document.createElement('button');
-          btn.className = `w-8 h-8 rounded-lg text-xs font-bold ${i === performancePage ? 'bg-primary text-white' : 'bg-white text-gray-500 hover:bg-gray-100'}`;
-          btn.innerText = i;
-          btn.onclick = () => { performancePage = i; updatePerformancePagination(); };
-          pageContainer.appendChild(btn);
-        }
+        // Numbers removed per user request
     }
   }
 
