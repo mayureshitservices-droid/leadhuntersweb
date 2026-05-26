@@ -5,7 +5,7 @@ export class LeadController {
             if (!req.user || req.user.role !== 'TELECALLER') {
                 return res.status(403).json({ error: 'Forbidden' });
             }
-            const limit = parseInt(req.query.limit) || 20;
+            const limit = parseInt(req.query.limit) || 1000;
             const offset = parseInt(req.query.offset) || 0;
             // Only serve leads explicitly assigned to this telecaller by the business owner
             const leads = await prisma.lead.findMany({

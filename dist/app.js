@@ -31,6 +31,7 @@ import leadsRoutes from './routes/leads.routes.js';
 import syncRoutes from './routes/sync.routes.js';
 import appRoutes from './routes/app.routes.js';
 app.use('/', webRoutes);
+app.use('/', appRoutes); // Allow /version as well as /api/app/version
 app.use('/api/auth', authRoutes);
 app.use('/api/v1', leadsRoutes);
 app.use('/api/v1', syncRoutes);

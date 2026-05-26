@@ -120,16 +120,17 @@ export class WebController {
         // Fetch telecallers assigned to this business owner
         const assignments = await prisma.telecallerAssignment.findMany({
             where: { business_owner_id: ownerId },
-            include: { telecaller: { select: { id: true, name: true, device_alias: true } } }
+            include: { telecaller: { select: { id: true, name: true, device_alias: true, last_seen: true } } }
         });
         const telecallers = assignments.map(a => ({
             id: a.telecaller.id,
-            name: a.telecaller.device_alias || a.telecaller.name
+            name: a.telecaller.device_alias || a.telecaller.name,
+            last_seen: a.telecaller.last_seen
         }));
         const leads = await prisma.lead.findMany({
             where: { business_owner_id: ownerId },
             orderBy: { created_at: 'desc' },
-            take: 100,
+            take: 5,
             include: { telecaller: { select: { name: true, device_alias: true } } }
         });
         const callLogs = await prisma.callLog.findMany({
@@ -143,53 +144,108 @@ export class WebController {
                 telecaller: { select: { name: true, device_alias: true } }
             },
             orderBy: { created_at: 'desc' },
-            take: 50
+            take: 5
         });
         // Performance Stats Logic
         const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        let perfStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        let perfEnd = new Date();
+        if (req.query.perfStart) {
+            perfStart = new Date(req.query.perfStart);
+        }
+        if (req.query.perfEnd) {
+            perfEnd = new Date(req.query.perfEnd);
+            perfEnd.setHours(23, 59, 59, 999);
+        }
         const callLogsPerformance = await prisma.callLog.findMany({
-            where: { lead: { business_owner_id: ownerId }, created_at: { gte: startOfMonth } },
+            where: { lead: { business_owner_id: ownerId }, created_at: { gte: perfStart, lte: perfEnd } },
             select: { telecaller_id: true, outcome: true, call_status: true, duration_seconds: true, created_at: true }
+        });
+        const leadsAssignedCounts = await prisma.lead.groupBy({
+            by: ['telecaller_id'],
+            where: { business_owner_id: ownerId, telecaller_id: { in: telecallers.map(tc => tc.id) } },
+            _count: { _all: true }
+        });
+        const assignedMap = {};
+        leadsAssignedCounts.forEach(l => {
+            if (l.telecaller_id)
+                assignedMap[l.telecaller_id] = l._count._all;
         });
         const perf = {};
         telecallers.forEach(tc => {
-            perf[tc.id] = { id: tc.id, name: tc.name, daily: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 }, monthly: { total: 0, answered: 0, missed: 0, rejected: 0, talkTime: 0 } };
+            perf[tc.id] = {
+                id: tc.id,
+                name: tc.name,
+                last_seen: tc.last_seen,
+                leadsAssigned: assignedMap[tc.id] || 0,
+                total: 0,
+                answered: 0,
+                missed: 0,
+                rejected: 0,
+                talkTime: 0
+            };
         });
         callLogsPerformance.forEach(log => {
             if (!perf[log.telecaller_id])
                 return;
-            const isToday = log.created_at >= startOfToday;
             const status = log.call_status?.toUpperCase() || 'UNKNOWN';
-            perf[log.telecaller_id].monthly.total++;
-            perf[log.telecaller_id].monthly.talkTime += log.duration_seconds;
+            perf[log.telecaller_id].total++;
+            perf[log.telecaller_id].talkTime += log.duration_seconds;
             if (status.includes('ANSWERED'))
-                perf[log.telecaller_id].monthly.answered++;
+                perf[log.telecaller_id].answered++;
             else if (status.includes('MISSED'))
-                perf[log.telecaller_id].monthly.missed++;
+                perf[log.telecaller_id].missed++;
             else if (status.includes('REJECTED') || status.includes('CANCELLED'))
-                perf[log.telecaller_id].monthly.rejected++;
-            if (isToday) {
-                perf[log.telecaller_id].daily.total++;
-                perf[log.telecaller_id].daily.talkTime += log.duration_seconds;
-                if (status.includes('ANSWERED'))
-                    perf[log.telecaller_id].daily.answered++;
-                else if (status.includes('MISSED'))
-                    perf[log.telecaller_id].daily.missed++;
-                else if (status.includes('REJECTED') || status.includes('CANCELLED'))
-                    perf[log.telecaller_id].daily.rejected++;
-            }
+                perf[log.telecaller_id].rejected++;
         });
         const formatTime = (s) => {
             const h = Math.floor(s / 3600);
             const m = Math.floor((s % 3600) / 60);
-            return h > 0 ? `${h}h ${m}m` : `${m}m`;
+            const secs = s % 60;
+            return h > 0 ? `${h}h ${m}m ${secs}s` : `${m}m ${secs}s`;
         };
         const telecallerPerformance = Object.values(perf).map(p => ({
             ...p,
-            daily: { ...p.daily, talkTimeFormatted: formatTime(p.daily.talkTime) },
-            monthly: { ...p.monthly, talkTimeFormatted: formatTime(p.monthly.talkTime) }
+            talkTimeFormatted: formatTime(p.talkTime)
+        }));
+        // Fetch Campaign Data
+        const campaignLeads = await prisma.lead.findMany({
+            where: { business_owner_id: ownerId },
+            select: {
+                file_name: true,
+                status: true,
+                telecaller: { select: { name: true, device_alias: true } }
+            }
+        });
+        const campaignMap = {};
+        campaignLeads.forEach(lead => {
+            const name = lead.file_name || 'Legacy Upload';
+            if (!campaignMap[name]) {
+                campaignMap[name] = {
+                    name,
+                    total: 0,
+                    processed: 0,
+                    pending: 0,
+                    telecallers: new Set()
+                };
+            }
+            campaignMap[name].total++;
+            if (lead.status === 'PENDING') {
+                campaignMap[name].pending++;
+            }
+            else {
+                campaignMap[name].processed++;
+            }
+            if (lead.telecaller) {
+                campaignMap[name].telecallers.add(lead.telecaller.device_alias || lead.telecaller.name);
+            }
+            else {
+                campaignMap[name].telecallers.add('Unassigned');
+            }
+        });
+        const campaigns = Object.values(campaignMap).map(c => ({
+            ...c,
+            telecallerNames: Array.from(c.telecallers).join(', ')
         }));
         res.render('owner_dashboard', {
             user,
@@ -201,7 +257,10 @@ export class WebController {
             leads,
             telecallers,
             callLogs,
-            telecallerPerformance
+            telecallerPerformance,
+            campaigns,
+            perfStart: perfStart.toISOString().split('T')[0],
+            perfEnd: perfEnd.toISOString().split('T')[0]
         });
     };
     exportCallLogs = async (req, res) => {
@@ -279,7 +338,8 @@ export class WebController {
         }
         const ownerId = req.session.user.id;
         const filePath = req.file.path;
-        const fileExt = path.extname(req.file.originalname).toLowerCase();
+        const fileName = req.file.originalname;
+        const fileExt = path.extname(fileName).toLowerCase();
         try {
             let results = [];
             if (fileExt === '.csv') {
@@ -319,23 +379,27 @@ export class WebController {
             }
             // Upsert logic: Create new leads, and for existing phone numbers (recurring customers),
             // reset status to PENDING so telecallers can call them again in the new cycle.
-            // All historical call logs and recordings for existing leads remain completely untouched.
             const BATCH_SIZE = 100;
             for (let i = 0; i < leadsToInsert.length; i += BATCH_SIZE) {
                 const batch = leadsToInsert.slice(i, i + BATCH_SIZE);
                 await Promise.all(batch.map(lead => prisma.lead.upsert({
                     where: {
                         business_owner_id_phone: {
-                            business_owner_id: lead.business_owner_id,
+                            business_owner_id: ownerId,
                             phone: lead.phone
                         }
                     },
-                    // If the lead is NEW — create it fresh
-                    create: lead,
-                    // If the lead ALREADY EXISTS (recurring customer) — reset it for a new call cycle
+                    create: {
+                        business_owner_id: ownerId,
+                        name: lead.name,
+                        phone: lead.phone,
+                        status: 'PENDING',
+                        file_name: fileName,
+                        additional_data: lead.additional_data
+                    },
                     update: {
                         status: 'PENDING',
-                        telecaller_id: null,
+                        file_name: fileName,
                         name: lead.name,
                         additional_data: lead.additional_data
                     }
@@ -564,6 +628,121 @@ export class WebController {
         }
         catch (error) {
             console.error('Error updating assignments:', error);
+            res.status(500).json({ error: 'Internal server error.' });
+        }
+    };
+    deleteCampaignLeads = async (req, res) => {
+        try {
+            const ownerId = req.session.user.id;
+            const { fileName } = req.body;
+            if (!fileName) {
+                return res.status(400).json({ error: 'File name is required' });
+            }
+            // Find leads to be deleted (only PENDING)
+            const leadsToDelete = await prisma.lead.findMany({
+                where: {
+                    business_owner_id: ownerId,
+                    file_name: fileName,
+                    status: 'PENDING'
+                },
+                select: { id: true }
+            });
+            if (leadsToDelete.length === 0) {
+                return res.json({ success: true, count: 0 });
+            }
+            const leadIds = leadsToDelete.map(l => l.id);
+            // Record deletions for the Android Heartbeat
+            await prisma.deletedLead.createMany({
+                data: leadIds.map(id => ({
+                    lead_id: id,
+                    business_owner_id: ownerId
+                }))
+            });
+            // Perform deletion
+            await prisma.lead.deleteMany({
+                where: { id: { in: leadIds } }
+            });
+            res.json({ success: true, count: leadIds.length });
+        }
+        catch (error) {
+            console.error('Delete Campaign Error:', error);
+            res.status(500).json({ error: 'Failed to delete leads' });
+        }
+    };
+    getPaginatedCallLogs = async (req, res) => {
+        try {
+            const ownerId = req.session.user.id;
+            const page = parseInt(req.query.page) || 1;
+            const search = (req.query.search || '').trim();
+            const take = 5;
+            const skip = (page - 1) * take;
+            const searchWhere = {
+                AND: [
+                    { lead: { business_owner_id: ownerId } },
+                    ...(search ? [{
+                            OR: [
+                                { lead: { name: { contains: search, mode: 'insensitive' } } },
+                                { lead: { phone: { contains: search, mode: 'insensitive' } } },
+                                { telecaller: { name: { contains: search, mode: 'insensitive' } } },
+                                { telecaller: { device_alias: { contains: search, mode: 'insensitive' } } },
+                                { notes: { contains: search, mode: 'insensitive' } },
+                                { call_status: { contains: search, mode: 'insensitive' } },
+                                { outcome: { contains: search, mode: 'insensitive' } },
+                            ]
+                        }] : [])
+                ]
+            };
+            const callLogs = await prisma.callLog.findMany({
+                where: searchWhere,
+                include: {
+                    lead: { select: { name: true, phone: true, status: true } },
+                    telecaller: { select: { name: true, device_alias: true } }
+                },
+                orderBy: { created_at: 'desc' },
+                take,
+                skip
+            });
+            const totalCount = await prisma.callLog.count({ where: searchWhere });
+            res.json({ success: true, data: callLogs, totalCount });
+        }
+        catch (error) {
+            console.error('Error fetching paginated call logs:', error);
+            res.status(500).json({ error: 'Internal server error.' });
+        }
+    };
+    getPaginatedLeads = async (req, res) => {
+        try {
+            const ownerId = req.session.user.id;
+            const page = parseInt(req.query.page) || 1;
+            const search = (req.query.search || '').trim();
+            const take = 5;
+            const skip = (page - 1) * take;
+            const searchWhere = {
+                AND: [
+                    { business_owner_id: ownerId },
+                    ...(search ? [{
+                            OR: [
+                                { name: { contains: search, mode: 'insensitive' } },
+                                { phone: { contains: search, mode: 'insensitive' } },
+                                { telecaller: { name: { contains: search, mode: 'insensitive' } } },
+                                { telecaller: { device_alias: { contains: search, mode: 'insensitive' } } },
+                                { file_name: { contains: search, mode: 'insensitive' } },
+                            ]
+                        }] : [])
+                ]
+            };
+            const leads = await prisma.lead.findMany({
+                where: searchWhere,
+                orderBy: { created_at: 'desc' },
+                take,
+                skip,
+                include: { telecaller: { select: { name: true, device_alias: true } } }
+            });
+            const totalCount = await prisma.lead.count({ where: searchWhere });
+            res.json({ success: true, data: leads, totalCount });
+        }
+        catch (error) {
+            console.error('Error fetching paginated leads:', error);
             res.status(500).json({ error: 'Internal server error.' });
         }
     };
