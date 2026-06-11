@@ -1,0 +1,44 @@
+version: '3.3'
+
+services:
+  web:
+    build: .
+    image: leadhunters_v2_web:latest
+    container_name: leadhunters_v2_web
+    restart: always
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env.v2
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app-v2-network
+
+  db:
+    image: postgres:15
+    container_name: leadhunters_v2_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: leadhunters_v2
+    volumes:
+      - pgdata_v2:/var/lib/postgresql/data
+    networks:
+      - app-v2-network
+
+  redis:
+    image: redis:7
+    container_name: leadhunters_v2_redis
+    restart: always
+    networks:
+      - app-v2-network
+
+volumes:
+  pgdata_v2:
+
+networks:
+  app-v2-network:
+    driver: bridge
