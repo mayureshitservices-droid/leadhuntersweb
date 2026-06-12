@@ -127,6 +127,8 @@ model CallLog {
   outcome          String?
   notes            String?
   next_reminder_time BigInt?
+  closing_format   String?
+  ptp_amount       Float?
   local_log_id     String?      // ID from Android local DB
   created_at       DateTime     @default(now())
 

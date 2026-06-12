@@ -49,7 +49,7 @@ export class SyncController {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
-      const { local_log_id, lead_id, duration_seconds, call_status, outcome, notes, next_reminder_time } = req.body;
+      const { local_log_id, lead_id, duration_seconds, call_status, outcome, notes, next_reminder_time, closing_format, ptp_amount } = req.body;
       const telecaller_id = req.user!.id;
 
       console.log(`[SyncCallLog] Received: local_log_id=${local_log_id}, lead_id=${lead_id}, call_status=${call_status}, outcome=${outcome}`);
@@ -100,7 +100,9 @@ export class SyncController {
             outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(/ /g, '_') : existingLog.outcome,
             notes: notes || existingLog.notes,
             local_log_id: local_log_id ? local_log_id.toString() : existingLog.local_log_id,
-            next_reminder_time: next_reminder_time ? BigInt(next_reminder_time) : existingLog.next_reminder_time
+            next_reminder_time: next_reminder_time ? BigInt(next_reminder_time) : existingLog.next_reminder_time,
+            closing_format: closing_format || existingLog.closing_format,
+            ptp_amount: ptp_amount !== undefined ? parseFloat(ptp_amount) : existingLog.ptp_amount
           }
         });
         console.log(`[SyncCallLog] Updated existing log id=${callLog.id}`);
@@ -115,7 +117,9 @@ export class SyncController {
             call_status: call_status || 'UNKNOWN',
             outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(/ /g, '_') : null,
             notes: notes || null,
-            next_reminder_time: next_reminder_time ? BigInt(next_reminder_time) : null
+            next_reminder_time: next_reminder_time ? BigInt(next_reminder_time) : null,
+            closing_format: closing_format || null,
+            ptp_amount: ptp_amount !== undefined ? parseFloat(ptp_amount) : null
           }
         });
         console.log(`[SyncCallLog] Created NEW log id=${callLog.id}`);
@@ -136,7 +140,9 @@ export class SyncController {
           duration: duration_seconds,
           call_status: call_status || 'UNKNOWN',
           outcome: outcome || '—',
-          notes
+          notes,
+          closing_format: closing_format || null,
+          ptp_amount: ptp_amount || null
         });
       }
 
@@ -146,7 +152,9 @@ export class SyncController {
         phone: lead.phone,
         telecaller_name: req.user!.name,
         reminder_timestamp: next_reminder_time || null,
-        outcome: outcome || ''
+        outcome: outcome || '',
+        closing_format: closing_format || null,
+        ptp_amount: ptp_amount || null
       });
 
       res.status(201).json({ success: true, log_id: callLog.id });
