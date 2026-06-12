@@ -8,6 +8,7 @@ export interface AuthRequest extends Request {
     id: string;
     role: string;
     name: string;
+    owner_id?: string | null;
   };
 }
 

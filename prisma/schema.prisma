@@ -43,6 +43,18 @@ enum LeadStatus {
   DEATH
   CSWN
   RTP
+  HOT_LEAD
+  WALK_IN
+  CALLBACK
+  FOLLOW_UP
+  WARM_LEAD
+  BUDGET_ISSUE
+  PENDING_DECISION
+  ONLINE
+  EXISTING_STUDENT
+  NOT_INTERESTED
+  LANGUAGE_ISSUE
+  SALE_DONE
 }
 
 model User {
@@ -58,27 +70,17 @@ model User {
   status        String   @default("Active")
   last_seen     DateTime?
   created_at    DateTime @default(now())
+  owner_id      String?  @db.Text
 
   // Relations
-  owned_leads        Lead[]                 @relation("OwnerLeads")
-  assigned_leads     Lead[]                 @relation("TelecallerLeads")
-  call_logs          CallLog[]
-  telecaller_assigns TelecallerAssignment[] @relation("TelecallerAssignments")
-  owner_assigns      TelecallerAssignment[] @relation("OwnerAssignments")
+  owned_leads  Lead[]  @relation("OwnerLeads")
+  assigned_leads Lead[] @relation("TelecallerLeads")
+  call_logs    CallLog[]
+  owner        User?   @relation("TelecallerOwner", fields: [owner_id], references: [id], onDelete: SetNull)
+  telecallers  User[]  @relation("TelecallerOwner")
 }
 
-model TelecallerAssignment {
-  id                String   @id @default(uuid())
-  telecaller_id     String
-  business_owner_id String
-  created_at        DateTime @default(now())
 
-  // Relations
-  telecaller     User @relation("TelecallerAssignments", fields: [telecaller_id], references: [id], onDelete: Cascade)
-  business_owner User @relation("OwnerAssignments", fields: [business_owner_id], references: [id], onDelete: Cascade)
-
-  @@unique([telecaller_id, business_owner_id])
-}
 
 model Lead {
   id                String     @id @default(uuid())
@@ -100,6 +102,14 @@ model Lead {
   @@unique([business_owner_id, phone])
 }
 
+model TelecallerStatus {
+  telecaller_name String   @id
+  device_id       String
+  status          String
+  last_seen_at    BigInt
+  updated_at      DateTime @default(now())
+}
+
 model DeletedLead {
   id                String   @id @default(uuid())
   lead_id           String
@@ -116,6 +126,7 @@ model CallLog {
   call_status      String   @default("COMPLETED")
   outcome          String?
   notes            String?
+  next_reminder_time BigInt?
   local_log_id     String?      // ID from Android local DB
   created_at       DateTime     @default(now())
 

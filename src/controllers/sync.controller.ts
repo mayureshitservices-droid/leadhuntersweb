@@ -24,6 +24,23 @@ const safeUnlink = (filePath: string) => {
   }
 };
 
+const SHEETS_WEBHOOK_URL = process.env.GOOGLE_SHEETS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbwdozDzz3oQdPnBOEc0MxZMlbUozRikoM5bZ-qWqOsdlNrRstWa2ZjnWK_37hrU9cv2PA/exec';
+
+async function notifySheets(data: Record<string, any>) {
+  try {
+    const response = await fetch(SHEETS_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      console.error(`[SheetsWebhook] HTTP ${response.status}: ${await response.text()}`);
+    }
+  } catch (err) {
+    console.error('[SheetsWebhook] Error:', err);
+  }
+}
+
 export class SyncController {
 
   syncCallLog = async (req: AuthRequest, res: Response) => {
@@ -32,7 +49,7 @@ export class SyncController {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
-      const { local_log_id, lead_id, duration_seconds, call_status, outcome, notes } = req.body;
+      const { local_log_id, lead_id, duration_seconds, call_status, outcome, notes, next_reminder_time } = req.body;
       const telecaller_id = req.user!.id;
 
       console.log(`[SyncCallLog] Received: local_log_id=${local_log_id}, lead_id=${lead_id}, call_status=${call_status}, outcome=${outcome}`);
@@ -46,10 +63,15 @@ export class SyncController {
       // Update lead status only if outcome is provided
       if (outcome && outcome !== 'PENDING') {
         const formattedOutcome = outcome.toUpperCase().replace(/ /g, '_');
-        await prisma.lead.update({
-          where: { id: lead_id },
-          data: { status: formattedOutcome as any }
-        });
+        const validStatuses = ['ANSWERED', 'MISSED', 'BUSY', 'INTERESTED', 'ORDERED', 'BOOKED', 'REMIND_LATER', 'LOST', 'REJECTED', 'CANCELLED', 'CB_REQUEST', 'LEFT_MSG', 'CALL_DISCONNECT', 'BANK_PTP', 'FPTP', 'PTP', 'NOT_REACHABLE', 'RNR', 'OUT_OF_SERVICE', 'SWITCH_OFF', 'INCOMING_NOT_AVAIABLE', 'PARTIAL_PAID', 'ALREADY_PAID', 'DEATH', 'CSWN', 'RTP', 'HOT_LEAD', 'WALK_IN', 'CALLBACK', 'FOLLOW_UP', 'WARM_LEAD', 'BUDGET_ISSUE', 'PENDING_DECISION', 'ONLINE', 'EXISTING_STUDENT', 'NOT_INTERESTED', 'LANGUAGE_ISSUE', 'SALE_DONE'];
+        if (validStatuses.includes(formattedOutcome)) {
+          await prisma.lead.update({
+            where: { id: lead_id },
+            data: { status: formattedOutcome as any }
+          });
+        } else {
+          console.warn(`[SyncCallLog] Invalid outcome received: "${outcome}" → "${formattedOutcome}" — skipping status update`);
+        }
       }
 
       // ONLY match on local_log_id — never fall back to time-window search
@@ -77,7 +99,8 @@ export class SyncController {
             call_status: call_status || existingLog.call_status,
             outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(/ /g, '_') : existingLog.outcome,
             notes: notes || existingLog.notes,
-            local_log_id: local_log_id ? local_log_id.toString() : existingLog.local_log_id
+            local_log_id: local_log_id ? local_log_id.toString() : existingLog.local_log_id,
+            next_reminder_time: next_reminder_time ? BigInt(next_reminder_time) : existingLog.next_reminder_time
           }
         });
         console.log(`[SyncCallLog] Updated existing log id=${callLog.id}`);
@@ -91,22 +114,39 @@ export class SyncController {
             duration_seconds: duration_seconds ? (parseInt(duration_seconds, 10) || 0) : 0,
             call_status: call_status || 'UNKNOWN',
             outcome: outcome && outcome !== 'PENDING' ? outcome.toUpperCase().replace(/ /g, '_') : null,
-            notes: notes || null
+            notes: notes || null,
+            next_reminder_time: next_reminder_time ? BigInt(next_reminder_time) : null
           }
         });
         console.log(`[SyncCallLog] Created NEW log id=${callLog.id}`);
       }
 
-      // Emit to dashboard via Socket.IO
-      io.to(`dashboard_${lead.business_owner_id}`).emit('new_call_log', {
-        log_id: callLog.id,
+      // Emit to dashboard via Socket.IO using telecaller's owner_id
+      const telecaller = await prisma.user.findUnique({
+        where: { id: telecaller_id },
+        select: { owner_id: true }
+      });
+
+      if (telecaller?.owner_id) {
+        io.to(`dashboard_${telecaller.owner_id}`).emit('new_call_log', {
+          log_id: callLog.id,
+          lead_name: lead.name,
+          lead_phone: lead.phone,
+          telecaller_name: req.user!.name,
+          duration: duration_seconds,
+          call_status: call_status || 'UNKNOWN',
+          outcome: outcome || '—',
+          notes
+        });
+      }
+
+      notifySheets({
+        campaign_name: lead.file_name || '',
         lead_name: lead.name,
-        lead_phone: lead.phone,
+        phone: lead.phone,
         telecaller_name: req.user!.name,
-        duration: duration_seconds,
-        call_status: call_status || 'UNKNOWN',
-        outcome: outcome || '—',
-        notes
+        reminder_timestamp: next_reminder_time || null,
+        outcome: outcome || ''
       });
 
       res.status(201).json({ success: true, log_id: callLog.id });

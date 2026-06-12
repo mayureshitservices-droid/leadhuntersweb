@@ -56,18 +56,9 @@ async function main() {
     telecallers.push(tc);
 
     // Assign to Owner
-    await prisma.telecallerAssignment.upsert({
-      where: {
-        telecaller_id_business_owner_id: {
-          telecaller_id: tc.id,
-          business_owner_id: owner.id
-        }
-      },
-      update: {},
-      create: {
-        telecaller_id: tc.id,
-        business_owner_id: owner.id
-      }
+    await prisma.user.update({
+      where: { id: tc.id },
+      data: { owner_id: owner.id }
     });
   }
 
