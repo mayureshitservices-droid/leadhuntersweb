@@ -1,4 +1,5 @@
 // Replace with your Spreadsheet ID
+// Webhook URL after update: https://script.google.com/macros/s/AKfycbyJ6KNnX1rd83ULA0O-vJnypIMgm34AQzLjAAG0mnc-7TsOIj2UOLs5nXU0jZyUmVWA-w/exec
 const SPREADSHEET_ID = '1m1VPQpkbp7G7xyian2FFXX51AF2BI8dz8Xu7RacO0m4';
 const SHEET_NAME = 'PTP';
 

@@ -25,7 +25,7 @@ const safeUnlink = (filePath: string) => {
   }
 };
 
-const SHEETS_WEBHOOK_URL = env('GOOGLE_SHEETS_WEBHOOK_URL') || 'https://script.google.com/macros/s/AKfycbwdozDzz3oQdPnBOEc0MxZMlbUozRikoM5bZ-qWqOsdlNrRstWa2ZjnWK_37hrU9cv2PA/exec';
+const SHEETS_WEBHOOK_URL = env('GOOGLE_SHEETS_WEBHOOK_URL') || 'https://script.google.com/macros/s/AKfycbyJ6KNnX1rd83ULA0O-vJnypIMgm34AQzLjAAG0mnc-7TsOIj2UOLs5nXU0jZyUmVWA-w/exec';
 
 async function notifySheets(data: Record<string, any>) {
   if (!SHEETS_WEBHOOK_URL) return;
