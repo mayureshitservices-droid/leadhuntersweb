@@ -5,14 +5,15 @@ import 'dotenv/config';
 import { prisma } from './config/db.js';
 import './cron.js';
 import { setIo } from './lib/io.js';
+import { env } from './lib/env.js';
 
-const PORT = process.env.PORT || 3000;
+const PORT = env('PORT') || '3000';
 
 const server = http.createServer(app);
 
 export const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: env('CORS_ORIGIN') || '*',
   }
 });
 setIo(io);

@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 import { prisma } from '../config/db.js';
 import { getIo } from '../lib/io.js';
+import { env } from '../lib/env.js';
 import multer from 'multer';
 import fs from 'fs';
 import * as os_sdk from 'oci-objectstorage';
@@ -24,9 +25,10 @@ const safeUnlink = (filePath: string) => {
   }
 };
 
-const SHEETS_WEBHOOK_URL = process.env.GOOGLE_SHEETS_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycbwdozDzz3oQdPnBOEc0MxZMlbUozRikoM5bZ-qWqOsdlNrRstWa2ZjnWK_37hrU9cv2PA/exec';
+const SHEETS_WEBHOOK_URL = env('GOOGLE_SHEETS_WEBHOOK_URL');
 
 async function notifySheets(data: Record<string, any>) {
+  if (!SHEETS_WEBHOOK_URL) return;
   try {
     const response = await fetch(SHEETS_WEBHOOK_URL, {
       method: 'POST',
@@ -191,9 +193,9 @@ export class SyncController {
         const logId = req.body.log_id;
         console.log(`[SyncRecording] Received recording for log_id=${logId}, file=${req.file?.originalname}, size=${req.file?.size} bytes`);
 
-        const bucketName = (process.env.OCI_BUCKET_NAME || 'spenca-telecrm-recordings').replace(/^"|"$/g, '');
-        const namespace = (process.env.OCI_NAMESPACE || 'bmdqyv5rml4m').replace(/^"|"$/g, '');
-        const region = (process.env.OCI_REGION || 'ap-mumbai-1').replace(/^"|"$/g, '');
+        const bucketName = env('OCI_BUCKET_NAME') || 'spenca-telecrm-recordings';
+        const namespace = env('OCI_NAMESPACE') || 'bmdqyv5rml4m';
+        const region = env('OCI_REGION') || 'ap-mumbai-1';
 
         const ext = path.extname(file.originalname) || '.m4a';
         const objectName = `records/${logId}_${crypto.randomBytes(4).toString('hex')}${ext}`;

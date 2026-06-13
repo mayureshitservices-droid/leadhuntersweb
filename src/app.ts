@@ -3,6 +3,7 @@ import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
+import { env } from './lib/env.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,16 +21,14 @@ import { createClient } from 'redis';
 import { RedisStore } from 'connect-redis';
 
 const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://redis:6379'
+  url: env('REDIS_URL') || 'redis://redis:6379'
 });
 redisClient.connect().catch(console.error);
 
-const SESSION_SECRET = process.env.SESSION_SECRET;
+const SESSION_SECRET = env('SESSION_SECRET');
 if (!SESSION_SECRET) {
   throw new Error('SESSION_SECRET environment variable is required');
 }
-
-app.set('trust proxy', 1);
 app.use(session({
   store: new RedisStore({ client: redisClient, prefix: "leadhunters:" }),
   secret: SESSION_SECRET,

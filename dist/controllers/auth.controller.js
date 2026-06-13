@@ -2,7 +2,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/db.js';
 import { getIo } from '../lib/io.js';
-const JWT_SECRET = process.env.JWT_SECRET;
+import { env } from '../lib/env.js';
+const JWT_SECRET = env('JWT_SECRET');
 if (!JWT_SECRET) {
     throw new Error('JWT_SECRET environment variable is required');
 }
