@@ -146,11 +146,14 @@ export class SyncController {
           outcome: outcome || '—',
           notes,
           closing_format: closing_format || null,
-          ptp_amount: ptp_amount || null
+          ptp_amount: ptp_amount !== undefined && ptp_amount !== null && ptp_amount !== '' ? parseFloat(ptp_amount) : null
         });
       }
 
-      const formatDate = (ms: number | string | bigint | null | undefined): string | null => {
+      // Only send to sheets on first create, not on update, and only when outcome is meaningful
+      if (outcome && outcome !== 'PENDING') {
+        if (!existingLog) {
+          const formatDate = (ms: number | string | bigint | null | undefined): string | null => {
         if (ms === null || ms === undefined) return null;
         const num = Number(ms);
         if (isNaN(num)) return null;
@@ -177,6 +180,8 @@ export class SyncController {
         closing_format: closing_format || null,
         ptp_amount: ptp_amount !== undefined && ptp_amount !== null && ptp_amount !== '' ? parseFloat(ptp_amount) : null
       });
+      }
+      }
 
       res.status(201).json({ success: true, log_id: callLog.id });
     } catch (error) {
