@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 import { prisma } from '../config/db.js';
 
@@ -47,7 +47,7 @@ export class TelecallerController {
     }
   };
 
-  getStatuses = async (_req: AuthRequest, res: Response) => {
+  getStatuses = async (_req: Request, res: Response): Promise<void> => {
     try {
       const [users, statusRows] = await Promise.all([
         prisma.user.findMany({
