@@ -1,3 +1,10 @@
+// Strip wrapping quotes from all env vars (Docker env_file passes them literally)
+for (const key of Object.keys(process.env)) {
+    const val = process.env[key];
+    if (val) {
+        process.env[key] = val.replace(/^"(.*)"$/, '$1').trim();
+    }
+}
 import http from 'http';
 import { Server } from 'socket.io';
 import app from './app.js';
