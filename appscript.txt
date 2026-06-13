@@ -1,0 +1,37 @@
+// Replace with your Spreadsheet ID
+const SPREADSHEET_ID = '1m1VPQpkbp7G7xyian2FFXX51AF2BI8dz8Xu7RacO0m4';
+const SHEET_NAME = 'PTP';
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
+
+    // Add headers if sheet is empty
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['Timestamp', 'Campaign Name', 'Lead Name', 'Phone', 'Telecaller Name', 'Reminder Timestamp', 'Call Outcome', 'Notes', 'PTP Amount', 'Closing Format']);
+    }
+
+    sheet.appendRow([
+      data.created_at || '',
+      data.campaign_name || '',
+      data.lead_name || '',
+      data.phone || '',
+      data.telecaller_name || '',
+      data.reminder_timestamp || '',
+      data.outcome || '',
+      data.notes || '',
+      data.ptp_amount || '',
+      data.closing_format || ''
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
