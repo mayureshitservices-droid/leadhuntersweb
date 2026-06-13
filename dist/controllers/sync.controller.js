@@ -138,39 +138,37 @@ export class SyncController {
                     ptp_amount: ptp_amount !== undefined && ptp_amount !== null && ptp_amount !== '' ? parseFloat(ptp_amount) : null
                 });
             }
-            // Only send to sheets on first create, not on update, and only when outcome is meaningful
+            // Only send to sheets when outcome is meaningful (user filled the form)
             if (outcome && outcome !== 'PENDING') {
-                if (!existingLog) {
-                    const formatDate = (ms) => {
-                        if (ms === null || ms === undefined)
-                            return null;
-                        const num = Number(ms);
-                        if (isNaN(num))
-                            return null;
-                        const d = new Date(num);
-                        if (d.toString() === 'Invalid Date')
-                            return null;
-                        const y = d.getFullYear();
-                        const m = String(d.getMonth() + 1).padStart(2, '0');
-                        const day = String(d.getDate()).padStart(2, '0');
-                        const h = String(d.getHours()).padStart(2, '0');
-                        const min = String(d.getMinutes()).padStart(2, '0');
-                        const s = String(d.getSeconds()).padStart(2, '0');
-                        return `${y}-${m}-${day} ${h}:${min}:${s}`;
-                    };
-                    notifySheets({
-                        campaign_name: lead.file_name || '',
-                        lead_name: lead.name,
-                        phone: lead.phone,
-                        telecaller_name: telecallerDisplayName,
-                        created_at: formatDate(callLog.created_at.getTime()),
-                        reminder_timestamp: formatDate(next_reminder_time),
-                        outcome: outcome || '',
-                        notes: notes || '',
-                        closing_format: closing_format || null,
-                        ptp_amount: ptp_amount !== undefined && ptp_amount !== null && ptp_amount !== '' ? parseFloat(ptp_amount) : null
-                    });
-                }
+                const formatDate = (ms) => {
+                    if (ms === null || ms === undefined)
+                        return null;
+                    const num = Number(ms);
+                    if (isNaN(num))
+                        return null;
+                    const d = new Date(num);
+                    if (d.toString() === 'Invalid Date')
+                        return null;
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const h = String(d.getHours()).padStart(2, '0');
+                    const min = String(d.getMinutes()).padStart(2, '0');
+                    const s = String(d.getSeconds()).padStart(2, '0');
+                    return `${y}-${m}-${day} ${h}:${min}:${s}`;
+                };
+                notifySheets({
+                    campaign_name: lead.file_name || '',
+                    lead_name: lead.name,
+                    phone: lead.phone,
+                    telecaller_name: telecallerDisplayName,
+                    created_at: formatDate(callLog.created_at.getTime()),
+                    reminder_timestamp: formatDate(next_reminder_time),
+                    outcome: outcome || '',
+                    notes: notes || '',
+                    closing_format: closing_format || null,
+                    ptp_amount: ptp_amount !== undefined && ptp_amount !== null && ptp_amount !== '' ? parseFloat(ptp_amount) : null
+                });
             }
             res.status(201).json({ success: true, log_id: callLog.id });
         }
