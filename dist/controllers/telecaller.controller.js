@@ -44,7 +44,7 @@ export class TelecallerController {
             const [users, statusRows] = await Promise.all([
                 prisma.user.findMany({
                     where: { role: 'TELECALLER' },
-                    select: { name: true, last_seen: true }
+                    select: { id: true, name: true, device_alias: true, last_seen: true }
                 }),
                 prisma.telecallerStatus.findMany()
             ]);
@@ -80,7 +80,8 @@ export class TelecallerController {
                     lastSeenHuman = `${Math.floor(seconds / 3600)}h ago`;
                 }
                 return {
-                    name: user.name,
+                    id: user.id,
+                    name: user.device_alias || user.name,
                     status: derivedStatus,
                     last_seen_at: lastSeenAt,
                     last_seen_human: lastSeenHuman,

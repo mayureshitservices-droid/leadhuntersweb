@@ -557,18 +557,18 @@
              <tbody id="performance-table-body" class="bg-white divide-y divide-gray-200">
                <% if (locals.telecallerPerformance && telecallerPerformance.length > 0) { %>
                  <% telecallerPerformance.forEach(function(perf) { %>
-                    <tr class="perf-row hover:bg-gray-50 transition-colors animate-fade-in-up">
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center gap-3">
-                          <span class="text-sm font-bold text-gray-900"><%= perf.name %></span>
-                        </div>
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="tc-status-label text-xs font-semibold text-gray-400" data-tc-name="<%= perf.name %>">...</span>
-                      </td>
-                      <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="tc-last-seen text-xs font-medium text-gray-400" data-tc-name="<%= perf.name %>">...</span>
-                      </td>
+                     <tr class="perf-row hover:bg-gray-50 transition-colors animate-fade-in-up" data-presence-id="<%= perf.id %>">
+                       <td class="px-6 py-4 whitespace-nowrap">
+                         <div class="flex items-center gap-3">
+                           <span class="text-sm font-bold text-gray-900"><%= perf.name %></span>
+                         </div>
+                       </td>
+                       <td class="px-6 py-4 whitespace-nowrap">
+                         <span class="tc-status-label text-xs font-semibold text-gray-400" data-tc-id="<%= perf.id %>">...</span>
+                       </td>
+                       <td class="px-6 py-4 whitespace-nowrap">
+                         <span class="tc-last-seen text-xs font-medium text-gray-400" data-tc-id="<%= perf.id %>">...</span>
+                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900"><%= perf.total %></td>
                       <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-emerald-600"><%= perf.answered %></td>
                       <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-orange-500"><%= perf.missed %></td>
@@ -589,14 +589,14 @@
        <div id="performance-cards-container" class="md:hidden pb-12 divide-y divide-gray-100">
           <% if (locals.telecallerPerformance && telecallerPerformance.length > 0) { 
                telecallerPerformance.forEach(function(perf) { %>
-              <div class="perf-card bg-white p-5 hover:bg-gray-50 transition-colors animate-fade-in-up">
-                <div class="flex justify-between items-center mb-4">
-                  <h4 class="text-lg font-bold text-gray-900"><%= perf.name %></h4>
-                  <div class="flex items-center gap-3">
-                    <span class="tc-status-label text-[10px] font-bold text-gray-400" data-tc-name="<%= perf.name %>">...</span>
-                    <span class="tc-last-seen text-[10px] text-gray-400 font-medium" data-tc-name="<%= perf.name %>">...</span>
-                  </div>
-                </div>
+               <div class="perf-card bg-white p-5 hover:bg-gray-50 transition-colors animate-fade-in-up" data-presence-id="<%= perf.id %>">
+                 <div class="flex justify-between items-center mb-4">
+                   <h4 class="text-lg font-bold text-gray-900"><%= perf.name %></h4>
+                   <div class="flex items-center gap-3">
+                     <span class="tc-status-label text-[10px] font-bold text-gray-400" data-tc-id="<%= perf.id %>">...</span>
+                     <span class="tc-last-seen text-[10px] text-gray-400 font-medium" data-tc-id="<%= perf.id %>">...</span>
+                   </div>
+                 </div>
                
                <div class="bg-gray-50 rounded-xl p-3 flex justify-between items-center mb-3">
                  <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total Calls</span>
@@ -1199,9 +1199,9 @@
 
   // Telecaller status polling for performance table
   function updateTelecallerStatuses(statuses) {
-    document.querySelectorAll('.tc-status-label[data-tc-name]').forEach(el => {
-      const name = el.getAttribute('data-tc-name');
-      const tc = statuses.find(s => s.name === name);
+    document.querySelectorAll('.tc-status-label[data-tc-id]').forEach(el => {
+      const id = el.getAttribute('data-tc-id');
+      const tc = statuses.find(s => s.id === id);
       if (tc) {
         const statusLabel = tc.status === 'on_call' ? 'On Call' : tc.status.charAt(0).toUpperCase() + tc.status.slice(1);
         el.textContent = statusLabel;
@@ -1211,9 +1211,9 @@
         el.className = 'tc-status-label text-xs font-semibold text-gray-400';
       }
     });
-    document.querySelectorAll('.tc-last-seen[data-tc-name]').forEach(el => {
-      const name = el.getAttribute('data-tc-name');
-      const tc = statuses.find(s => s.name === name);
+    document.querySelectorAll('.tc-last-seen[data-tc-id]').forEach(el => {
+      const id = el.getAttribute('data-tc-id');
+      const tc = statuses.find(s => s.id === id);
       if (tc) {
         el.textContent = tc.last_seen_human;
         el.className = 'tc-last-seen text-xs font-medium text-gray-500';
