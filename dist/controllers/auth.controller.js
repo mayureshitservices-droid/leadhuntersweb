@@ -1,7 +1,11 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/db.js';
-const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+import { getIo } from '../lib/io.js';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+}
 export class AuthController {
     login = async (req, res) => {
         try {
@@ -17,7 +21,7 @@ export class AuthController {
             if (user.role !== 'TELECALLER') {
                 return res.status(403).json({ error: 'Only telecallers can access the mobile app API.' });
             }
-            const token = jwt.sign({ id: user.id, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '30d' });
+            const token = jwt.sign({ id: user.id, role: user.role, name: user.name, owner_id: user.owner_id }, JWT_SECRET, { expiresIn: '30d' });
             res.json({
                 token,
                 user: {
@@ -48,7 +52,7 @@ export class AuthController {
                     role: 'TELECALLER'
                 }
             });
-            const token = jwt.sign({ id: user.id, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '1y' } // Device tokens last a long time
+            const token = jwt.sign({ id: user.id, role: user.role, name: user.name, owner_id: user.owner_id }, JWT_SECRET, { expiresIn: '1y' } // Device tokens last a long time
             );
             res.json({
                 token,
@@ -67,37 +71,32 @@ export class AuthController {
     heartbeat = async (req, res) => {
         try {
             const id = req.user?.id;
+            const ownerId = req.user?.owner_id;
             if (!id)
                 return res.status(401).json({ error: 'Unauthorized' });
             await prisma.user.update({
                 where: { id },
                 data: { last_seen: new Date() }
             });
-            // Dynamically import io to avoid circular dependency
-            const { io } = await import('../index.js');
-            const assignments = await prisma.telecallerAssignment.findMany({
-                where: { telecaller_id: id },
-                select: { business_owner_id: true }
-            });
-            // Fetch deleted leads for this telecaller's owners
-            const ownerIds = assignments.map(a => a.business_owner_id);
-            const recentlyDeleted = await prisma.deletedLead.findMany({
-                where: {
-                    business_owner_id: { in: ownerIds },
-                    deleted_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // Last 24 hours
-                },
-                select: { lead_id: true }
-            });
-            assignments.forEach(a => {
-                io.to(`dashboard_${a.business_owner_id}`).emit('presence_update', {
+            let deletedLeads = [];
+            if (ownerId) {
+                const recentlyDeleted = await prisma.deletedLead.findMany({
+                    where: {
+                        business_owner_id: ownerId,
+                        deleted_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+                    },
+                    select: { lead_id: true }
+                });
+                deletedLeads = recentlyDeleted.map(d => d.lead_id);
+                getIo().to(`dashboard_${ownerId}`).emit('presence_update', {
                     telecallerId: id,
                     isOnline: true,
                     lastSeen: new Date()
                 });
-            });
+            }
             res.json({
                 success: true,
-                deletedLeads: recentlyDeleted.map(d => d.lead_id)
+                deletedLeads
             });
         }
         catch (error) {

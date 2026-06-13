@@ -2,13 +2,15 @@
 
 <div class="animate-fade-in-up">
     <!-- Header Section -->
-    <div class="mb-8 flex md:flex-row flex-col justify-between md:items-end">
+    <div class="mb-2 flex md:flex-row flex-col justify-between md:items-center px-2 sm:px-0">
       <div>
         <h2 class="text-3xl font-bold tracking-tight text-gray-900 border-b-4 border-primary inline-block pb-1">Owner Dashboard</h2>
         <p class="text-sm font-medium text-gray-500 mt-2">Welcome back, <%= user.name %></p>
       </div>
+
+
     </div>
-  <div class="px-4 py-4 sm:px-0">
+  <div class="px-0 pt-0 pb-4 sm:px-0">
     <!-- Actions Section -->
     <div x-show="activeTab === 'upload'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="space-y-8">
       
@@ -28,386 +30,1345 @@
 
         <!-- Upload Card -->
         <div class="bg-white shadow rounded-2xl border border-gray-100 p-6 md:col-span-1 lg:col-span-2 h-full">
-       <div class="flex justify-between items-center mb-4">
-         <h3 class="text-lg leading-6 font-bold text-gray-900">Upload New Leads (CSV/Excel)</h3>
-         <a href="/sample_leads.csv" download class="text-sm font-medium text-blue-600 hover:text-blue-500 flex items-center transition-colors">
-           <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-           Download Sample
-         </a>
-       </div>
-       <form action="/owner/upload-leads" method="POST" enctype="multipart/form-data" class="flex items-center space-x-4">
-         <div class="flex-1">
-           <label class="block sr-only">Choose file</label>
-           <input type="file" name="leads_file" accept=".csv, .xlsx, .xls" required class="block w-full text-sm text-gray-500
-             file:mr-4 file:py-2 file:px-4
-             file:rounded-full file:border-0
-             file:text-sm file:font-semibold
-             file:bg-container file:text-primary
-             hover:file:bg-red-100"
-           />
-         </div>
-         <button type="submit" class="btn-primary flex items-center shrink-0">
-           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
-             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-           </svg>
-           Upload
-         </button>
-       </form>
-       <div class="mt-4 flex items-center text-xs text-gray-400 font-medium">
-         <svg class="w-4 h-4 mr-1.5 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-         </svg>
-         Supported: .csv, .xlsx, .xls | Required columns: Name, Phone
-       </div>
-       <% if (locals.uploadMsg) { %>
-         <p class="mt-3 text-sm text-green-600 font-bold flex items-center">
-            <svg class="w-4 h-4 mr-1.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-            <%= uploadMsg %>
-         </p>
-       <% } %>
-       <% if (locals.errorMsg) { %>
-         <p class="mt-3 text-sm text-red-600 font-bold flex items-center">
-            <svg class="w-5 h-5 mr-1.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-            <%= errorMsg %>
-         </p>
-       <% } %>
-      </div>
-    </div> <!-- Close Grid wrapper -->
-
-    <!-- Leads Table -->
-    <div class="bg-white shadow rounded-2xl overflow-hidden border border-gray-100">
-        <div class="px-6 py-5 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
-          <h3 class="text-lg leading-6 font-bold text-gray-900">Your Leads</h3>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            Total: <%= locals.leads ? leads.length : 0 %>
-          </span>
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg leading-6 font-bold text-gray-900">Upload New Leads (CSV/Excel)</h3>
+          <a href="/sample_leads.csv" download class="text-sm font-medium text-blue-600 hover:text-blue-500 flex items-center transition-colors">
+            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            Download Sample
+          </a>
         </div>
-        
-        <div class="overflow-x-auto max-h-[400px] overflow-y-auto relative hidden-scrollbar border-t border-gray-100">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm border-b border-gray-200">
-              <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile No.</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added On</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <% if (locals.leads && leads.length > 0) { %>
-                <% leads.forEach(function(lead) { %>
-                  <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= lead.name %></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= lead.phone %></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      <% if (lead.telecaller) { %>
-                        <span class="inline-flex items-center gap-1.5">
-                          <span class="w-2 h-2 rounded-full bg-blue-400 shrink-0"></span>
-                          <%= lead.telecaller.device_alias || lead.telecaller.name %>
-                        </span>
-                      <% } else { %>
-                        <span class="text-gray-400 italic text-xs">Unassigned</span>
-                      <% } %>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <% 
-                        let statusClass = 'bg-gray-100 text-gray-800';
-                        if (lead.status === 'PENDING') statusClass = 'bg-amber-100 text-amber-800';
-                        else if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(lead.status)) statusClass = 'bg-green-100 text-green-800';
-                        else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(lead.status)) statusClass = 'bg-red-100 text-red-800';
-                        else if (lead.status === 'REMIND_LATER') statusClass = 'bg-blue-100 text-blue-800';
-                      %>
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider <%= statusClass %>">
-                        <%= lead.status %>
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= new Date(lead.created_at).toLocaleDateString() %></td>
-                  </tr>
-                <% }); %>
-              <% } else { %>
-                <tr>
-                  <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500 font-medium italic">No leads found. Upload a file to get started!</td>
-                </tr>
-              <% } %>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Assign Unassigned Leads Panel -->
-      <div class="bg-white shadow rounded-2xl border border-gray-100 p-6">
-        <div class="flex flex-col sm:flex-row sm:items-end gap-4">
+        <form action="/owner/upload-leads" method="POST" enctype="multipart/form-data" class="flex items-center space-x-4">
           <div class="flex-1">
-            <h3 class="text-base font-bold text-gray-900 mb-1">Assign Unassigned Leads</h3>
-            <p class="text-xs text-gray-400 mb-3">Select a telecaller below to assign all currently <span class="font-semibold text-amber-600">unassigned</span> leads to them.</p>
-            <label class="block text-xs font-semibold text-gray-500 mb-1">Select Telecaller <span class="text-red-500">*</span></label>
-            <form action="/owner/assign-leads" method="POST" class="flex items-center gap-6">
-              <select name="telecaller_id" required
-                class="flex-1 block rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-700 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
-                <option value="">— Select a Telecaller —</option>
-                <% if (locals.telecallers && telecallers.length > 0) { %>
-                  <% telecallers.forEach(function(tc) { %>
-                    <option value="<%= tc.id %>"><%= tc.name %></option>
-                  <% }); %>
-                <% } else { %>
-                  <option disabled>No telecallers assigned to you yet</option>
-                <% } %>
-              </select>
-              <button type="submit" class="btn-primary flex items-center shrink-0">
-                <svg class="w-4 h-4 mr-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Assign All Unassigned
-              </button>
-            </form>
+            <input type="file" name="leads_file" accept=".csv, .xlsx, .xls" required class="block w-full text-sm text-gray-500
+              file:mr-4 file:py-2 file:px-4
+              file:rounded-full file:border-0
+              file:text-sm file:font-semibold
+              file:bg-container file:text-primary
+              hover:file:bg-red-100"
+            />
           </div>
+          <input type="text" name="campaign_name" placeholder="campaign name" required class="w-48 rounded-full border border-gray-300 px-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent" />
+          <button type="submit" class="btn-primary flex items-center shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+            Upload
+          </button>
+        </form>
         </div>
-
-        <!-- Assign feedback messages -->
-        <% if (locals.assignMsg) { %>
-          <p class="mt-4 text-sm text-green-600 font-bold flex items-center">
-            <svg class="w-4 h-4 mr-1.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-            <%= assignMsg %>
-          </p>
-        <% } %>
-        <% if (locals.assignError) { %>
-          <p class="mt-4 text-sm text-red-600 font-bold flex items-center">
-            <svg class="w-5 h-5 mr-1.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-            <%= assignError %>
-          </p>
-        <% } %>
       </div>
-      
+
+      <!-- Upload Feedback Banners -->
+      <% if (locals.uploadMsg) { %>
+        <div class="flex items-center gap-3 px-5 py-4 bg-green-50 border border-green-200 rounded-2xl text-green-700 text-sm font-semibold shadow-sm">
+          <svg class="w-5 h-5 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+          <%= uploadMsg %>
+        </div>
+      <% } %>
+      <% if (locals.errorMsg) { %>
+        <div class="flex items-center gap-3 px-5 py-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm font-semibold shadow-sm">
+          <svg class="w-5 h-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          <%= errorMsg %>
+        </div>
+      <% } %>
+
+      <!-- Leads Table -->
+      <div class="bg-white shadow rounded-2xl overflow-hidden border border-gray-100">
+          <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h3 class="text-lg leading-6 font-bold text-gray-900 whitespace-nowrap">Your Leads</h3>
+            <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm group focus-within:border-primary/30 transition-all">
+              <svg class="h-3.5 w-3.5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input type="text" id="leads-search" placeholder="Search..." class="bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs font-bold text-gray-700 placeholder-gray-400 p-0 w-32 md:w-40">
+            </div>
+          </div>
+          
+          <div class="overflow-x-auto relative hidden-scrollbar border-t border-gray-100 hidden md:block">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm border-b border-gray-200">
+                <tr>
+                  <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</th>
+                  <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mobile</th>
+                  <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Added On</th>
+                </tr>
+              </thead>
+              <tbody id="leads-table-body" class="bg-white divide-y divide-gray-200">
+                <% if (locals.leads && leads.length > 0) { %>
+                  <% leads.forEach(function(lead) { %>
+                    <tr class="lead-row hover:bg-gray-50 transition-colors cursor-pointer" 
+                        data-lead="<%= JSON.stringify(lead) %>"
+                        @click="openLeadDetails($el.dataset.lead)">
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900"><%= lead.name %></td>
+                      <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium"><%= lead.phone %></td>
+                      <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium"><%= new Date(lead.created_at).toLocaleDateString('en-IN') %></td>
+                    </tr>
+                  <% }); %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Mobile Card View (Leads) -->
+          <div id="leads-cards-container" class="md:hidden divide-y divide-gray-100">
+             <% if (locals.leads && leads.length > 0) { %>
+               <% leads.forEach(function(lead) { %>
+                  <div class="lead-card p-5 hover:bg-gray-50 transition-colors cursor-pointer" 
+                       data-lead="<%= JSON.stringify(lead) %>"
+                       @click="openLeadDetails($el.dataset.lead)">
+                    <div class="flex justify-between items-start">
+                      <div>
+                        <h4 class="text-base font-bold text-gray-900"><%= lead.name %></h4>
+                        <p class="text-sm text-gray-500 font-medium mt-1"><%= lead.phone %></p>
+                      </div>
+                    </div>
+                  </div>
+               <% }); %>
+             <% } %>
+          </div>
+          
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+             <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div class="text-xs text-gray-500 font-medium" id="leads-pagination-info">
+                  Showing <span id="leads-start-range">0</span> to <span id="leads-end-range">0</span> of <span id="leads-total-count">0</span> leads
+                </div>
+                <div class="hidden md:flex items-center gap-2">
+                  <button id="leads-prev-page" class="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-primary disabled:opacity-30 transition-all"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                  <div id="leads-page-numbers" class="flex items-center gap-1"></div>
+                  <button id="leads-next-page" class="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-primary disabled:opacity-30 transition-all"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+                </div>
+                <button id="leads-load-more" class="md:hidden w-full py-3 rounded-2xl border-2 border-gray-100 bg-white text-xs font-bold text-gray-600 shadow-sm transition-all">Load More Leads</button>
+             </div>
+          </div>
+      </div>
+
+
     </div>
 
-    <!-- Live Activity Feed -->
-    <div x-cloak x-show="activeTab === 'activity'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="bg-white shadow rounded-2xl overflow-hidden border border-gray-100">
-      <div class="px-6 py-5 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
-        <h3 class="text-lg leading-6 font-bold text-gray-900">Live Call Activity</h3>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          <span class="w-2 h-2 mr-1.5 bg-green-500 rounded-full animate-pulse"></span>
-          Live
-        </span>
-      </div>
+    <!-- Detailed View Feed -->
+    <div x-show="activeTab === 'activity'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="md:bg-white md:shadow md:rounded-2xl overflow-hidden md:border md:border-gray-100">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <h3 class="text-lg leading-6 font-bold text-gray-900 whitespace-nowrap">Detailed View</h3>
+        
+        <!-- Filter Row: Search, Date Filter & Export -->
+        <div class="flex flex-wrap items-center justify-end gap-3 w-full md:w-auto">
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm group focus-within:border-primary/30 transition-all">
+            <svg class="h-3.5 w-3.5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input type="text" 
+                   id="detailed-view-search" 
+                   placeholder="Search..." 
+                   class="bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs font-bold text-gray-700 placeholder-gray-400 p-0 w-32 md:w-40">
+          </div>
 
-      <!-- Live Activity Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 py-4 bg-gray-50/30 border-b border-gray-100">
-        <div class="bg-white overflow-hidden shadow-sm hover:shadow rounded-lg p-3 border border-gray-100 flex items-center transition-all duration-200">
-          <div class="p-2 rounded-lg bg-amber-50 text-amber-500 mr-4">
-            <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">From</span>
+            <input type="date" x-model="exportStart" class="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 p-0 cursor-pointer">
           </div>
-          <div>
-            <p class="text-sm font-medium text-gray-500 truncate">Pending Calls</p>
-            <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900"><%= stats.pending %></p>
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">To</span>
+            <input type="date" x-model="exportEnd" class="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 p-0 cursor-pointer">
           </div>
-        </div>
-
-        <div class="bg-white overflow-hidden shadow-sm hover:shadow rounded-lg p-3 border border-gray-100 flex items-center transition-all duration-200">
-          <div class="p-2 rounded-lg bg-green-50 text-emerald-500 mr-4">
-            <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-medium text-gray-500 truncate">Answered</p>
-            <p class="mt-1 text-2xl md:text-3xl font-semibold text-gray-900" id="stat-answered"><%= stats.answered %></p>
-          </div>
+          <a :href="`/owner/export-calls?start=${exportStart}&end=${exportEnd}`" 
+             class="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-200 hover:-translate-y-0.5 active:translate-y-0 shrink-0">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            Export Excel
+          </a>
         </div>
       </div>
-       <div class="overflow-x-auto relative hidden-scrollbar border-t border-gray-100">
+
+       <div class="overflow-x-auto relative hidden-scrollbar border-t border-gray-100 hidden md:block">
            <table class="min-w-full divide-y divide-gray-200">
+             <!-- ... table header ... -->
              <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm border-b border-gray-200">
                <tr>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Customer Name</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mobile</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timestamp</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Duration</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lead Status</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Outcome</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Remarks</th>
-                 <th scope="col" class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Telecaller</th>
+                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Customer Name</th>
+                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mobile</th>
+                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timestamp</th>
+                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Duration</th>
+                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Outcome</th>
+                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Remarks</th>
+                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Telecaller</th>
+                 <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Recording</th>
                </tr>
              </thead>
              <tbody id="live-calls" class="bg-white divide-y divide-gray-200">
                <% if (locals.callLogs && callLogs.length > 0) { %>
                  <% callLogs.forEach(function(log) { %>
-                   <tr id="log-<%= log.id %>" class="hover:bg-gray-50 transition-colors animate-fade-in-up">
-                     <td class="px-6 py-4 whitespace-nowrap">
-                       <div class="text-sm font-bold text-gray-900"><%= log.lead.name %></div>
-                     </td>
+                   <tr id="log-<%= log.id %>" class="log-row hover:bg-gray-50 transition-colors animate-fade-in-up cursor-pointer" data-lead="<%= JSON.stringify(log.lead) %>" @click="openLeadDetails($el.dataset.lead, '<%= log.outcome || log.call_status %>')">
+                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900"><%= log.lead.name %></td>
                      <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium"><%= log.lead.phone %></td>
-                     <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">
-                        <%= new Date(log.created_at).toLocaleString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) %>
-                     </td>
-                     <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">
-                        <% 
-                          const mins = Math.floor(log.duration_seconds / 60);
-                          const secs = log.duration_seconds % 60;
-                          const formattedDuration = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                        %>
-                        <%= formattedDuration %>
-                     </td>
-                     <td class="px-6 py-4 whitespace-nowrap">
-                        <% 
-                          let leadStatusClass = 'bg-gray-100 text-gray-800';
-                          if (log.lead.status === 'PENDING') leadStatusClass = 'bg-amber-100 text-amber-800';
-                          else if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(log.lead.status)) leadStatusClass = 'bg-green-100 text-green-800';
-                          else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(log.lead.status)) leadStatusClass = 'bg-red-100 text-red-800';
-                          else if (log.lead.status === 'REMIND_LATER') leadStatusClass = 'bg-blue-100 text-blue-800';
-                        %>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider <%= leadStatusClass %>">
-                          <%= log.lead.status %>
-                        </span>
-                     </td>
-                     <td class="px-6 py-4 whitespace-nowrap">
-                        <% 
-                          let logStatusClass = 'bg-gray-100 text-gray-800';
-                          if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(log.status)) logStatusClass = 'bg-green-100 text-green-800';
-                          else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(log.status)) logStatusClass = 'bg-red-100 text-red-800';
-                          else if (log.status === 'REMIND_LATER') logStatusClass = 'bg-blue-100 text-blue-800';
-                        %>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider <%= logStatusClass %>">
-                          <%= log.status %>
-                        </span>
-                     </td>
-                     <td class="px-6 py-4">
-                       <div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="<%= log.notes %>">
-                         <%= log.notes || '—' %>
-                       </div>
-                       <% if (log.recording_url) { %>
-                         <div class="mt-2 audio-container">
-                            <audio controls src="<%= log.recording_url %>" class="h-6 w-32 outline-none"></audio>
-                         </div>
-                       <% } else { %>
-                         <div class="mt-2 audio-container"></div>
-                       <% } %>
-                     </td>
-                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-xs font-medium text-gray-700">
-                          <%= log.telecaller.device_alias || log.telecaller.name %>
-                        </div>
-                     </td>
+                     <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium"><%= new Date(log.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true }) %></td>
+                     <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold"><%= Math.floor(log.duration_seconds / 60).toString().padStart(2, '0') %>:<%= (log.duration_seconds % 60).toString().padStart(2, '0') %></td>
+                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize"><%= log.call_status ? log.call_status.toLowerCase() : '' %></td>
+                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize"><%= (log.outcome && log.outcome !== 'PENDING' ? log.outcome : '—').toLowerCase().replace(/_/g, ' ') %></td>
+                     <td class="px-6 py-4"><div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="<%= log.notes %>"><%= log.notes || '—' %></div></td>
+                     <td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-700"><%= (log.telecaller ? (log.telecaller.device_alias || log.telecaller.name) : 'Unknown') %></td>
+                     <td class="px-6 py-4 whitespace-nowrap"><div class="audio-container"><% if (log.recording_url) { %><audio controls src="<%= log.recording_url %>" class="h-6 w-32 outline-none"></audio><% } %></div></td>
                    </tr>
                  <% }); %>
-               <% } else { %>
-                 <tr id="empty-state">
-                   <td colspan="8" class="px-6 py-12 text-center text-sm text-gray-500 font-medium italic">
-                      <div class="flex flex-col items-center">
-                        <svg class="w-12 h-12 text-gray-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <span>Waiting for fresh call logs via Socket...</span>
+               <% } %>
+             </tbody>
+           </table>
+       </div>
+
+       <!-- Mobile Card View (Premium - Optimized Space) -->
+       <div id="activity-cards-container" class="md:hidden pb-12">
+          <% if (locals.callLogs && callLogs.length > 0) { 
+               let lastDate = "";
+               callLogs.forEach(function(log) { 
+                 const logDate = new Date(log.created_at).toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+                 if (logDate !== lastDate) { lastDate = logDate; %>
+              <div class="date-header px-4 py-3 bg-white/95 backdrop-blur-md text-[10px] font-bold text-gray-400 sticky top-0 z-10 border-b border-gray-100 uppercase tracking-[0.2em] mb-6 mt-10 first:mt-0"><%= logDate %></div>
+          <% } %>
+              <div id="card-log-<%= log.id %>" 
+                   class="activity-card bg-white p-5 mb-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)] border border-gray-100 rounded-2xl mx-3 animate-fade-in-up cursor-pointer"
+                   data-lead="<%= JSON.stringify(log.lead) %>"
+                   @click="openLeadDetails($el.dataset.lead, '<%= log.outcome || log.call_status %>')">
+                <!-- Header: Info (No redundant badge) -->
+                <div class="mb-3">
+                  <h4 class="text-lg font-bold text-gray-900 leading-tight tracking-tight"><%= log.lead.name %></h4>
+                  <p class="text-sm text-gray-500 font-bold mt-0.5 tracking-tight"><%= log.lead.phone %></p>
+                </div>
+
+                <!-- Stats Row (Compact) -->
+                <div class="grid grid-cols-3 gap-0.5 py-3 border-y border-gray-100 mb-3">
+                  <div class="flex flex-col items-center text-center">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Time</p>
+                    <p class="text-sm text-gray-800 font-bold"><%= new Date(log.created_at).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true }) %></p>
+                  </div>
+                  <div class="flex flex-col items-center text-center border-x border-gray-100 px-1">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Duration</p>
+                    <p class="text-sm text-gray-800 font-bold"><%= Math.floor(log.duration_seconds / 60).toString().padStart(2, '0') %>:<%= (log.duration_seconds % 60).toString().padStart(2, '0') %></p>
+                  </div>
+                  <div class="flex flex-col items-center text-center">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Status</p>
+                    <% 
+                      const statusColors = {
+                        'PENDING': 'text-amber-500',
+                        'INTERESTED': 'text-emerald-500',
+                        'ORDERED': 'text-emerald-600',
+                        'BOOKED': 'text-emerald-700',
+                        'BANK_PTP': 'text-emerald-600',
+                        'FPTP': 'text-emerald-600',
+                        'PTP': 'text-emerald-600',
+                        'REJECTED': 'text-red-500',
+                        'CANCELLED': 'text-red-600',
+                        'CALL_DISCONNECT': 'text-red-500',
+                        'OUT_OF_SERVICE': 'text-red-600',
+                        'SWITCH_OFF': 'text-red-600',
+                        'INCOMING_NOT_AVAIABLE': 'text-red-600',
+                        'RTP': 'text-red-700',
+                        'MISSED': 'text-gray-400',
+                        'BUSY': 'text-gray-500',
+                        'NOT_REACHABLE': 'text-gray-400',
+                        'RNR': 'text-gray-400',
+                        'CB_REQUEST': 'text-blue-500',
+                        'LEFT_MSG': 'text-blue-400',
+                        'REMIND_LATER': 'text-indigo-500',
+                        'PARTIAL_PAID': 'text-purple-500',
+                        'ALREADY_PAID': 'text-purple-600',
+                        'DEATH': 'text-black',
+                        'LOST': 'text-gray-600'
+                      };
+                      const statusClass = statusColors[log.outcome] || statusColors[log.call_status] || 'text-emerald-600';
+                    %>
+                    <p class="text-sm font-bold uppercase tracking-wide <%= statusClass %>"><%= (log.outcome || log.call_status || 'Answered').toLowerCase().replace(/_/g, ' ') %></p>
+                  </div>
+                </div>
+
+                <!-- Remarks Section (Reduced Height) -->
+                <% if (log.notes) { %>
+                  <div class="flex gap-3 mb-4 px-1">
+                    <div class="text-primary opacity-30 shrink-0">
+                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 18.3137 20.3307 21 17.017 21H14.017ZM1.017 21L1.017 18C1.017 16.8954 1.91243 16 3.017 16H6.017C6.56928 16 7.017 15.5523 7.017 15V9C7.017 8.44772 6.56928 8 6.017 8H3.017C1.91243 8 1.017 7.10457 1.017 6V5C1.017 3.89543 1.91243 3 3.017 3H6.017C8.22614 3 10.017 4.79086 10.017 7V15C10.017 18.3137 7.33072 21 4.017 21H1.017Z"/></svg>
+                    </div>
+                    <p class="text-sm text-gray-700 font-medium leading-relaxed italic line-clamp-3"><%= log.notes %></p>
+                  </div>
+                <% } %>
+
+                <div class="h-px bg-gray-50 mb-4"></div>
+
+                <!-- Footer Row (Compact) -->
+                <div class="flex items-center justify-between mb-3 px-1">
+                  <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm 
+                    <% 
+                      const bgColors = {
+                        'PENDING': 'bg-amber-50 text-amber-600 border-amber-100',
+                        'INTERESTED': 'bg-green-50 text-emerald-600 border-emerald-100',
+                        'ORDERED': 'bg-green-50 text-emerald-600 border-emerald-100',
+                        'BOOKED': 'bg-green-50 text-emerald-600 border-emerald-100',
+                        'BANK_PTP': 'bg-green-50 text-emerald-600 border-emerald-100',
+                        'FPTP': 'bg-green-50 text-emerald-600 border-emerald-100',
+                        'PTP': 'bg-green-50 text-emerald-600 border-emerald-100',
+                        'REJECTED': 'bg-red-50 text-red-600 border-red-100',
+                        'CANCELLED': 'bg-red-50 text-red-600 border-red-100',
+                        'CALL_DISCONNECT': 'bg-red-50 text-red-600 border-red-100',
+                        'OUT_OF_SERVICE': 'bg-red-50 text-red-600 border-red-100',
+                        'SWITCH_OFF': 'bg-red-50 text-red-600 border-red-100',
+                        'INCOMING_NOT_AVAIABLE': 'bg-red-50 text-red-600 border-red-100',
+                        'RTP': 'bg-red-50 text-red-600 border-red-100',
+                        'MISSED': 'bg-gray-50 text-gray-500 border-gray-100',
+                        'BUSY': 'bg-gray-50 text-gray-500 border-gray-100',
+                        'NOT_REACHABLE': 'bg-gray-50 text-gray-500 border-gray-100',
+                        'RNR': 'bg-gray-50 text-gray-500 border-gray-100',
+                        'CB_REQUEST': 'bg-blue-50 text-blue-600 border-blue-100',
+                        'LEFT_MSG': 'bg-blue-50 text-blue-600 border-blue-100',
+                        'REMIND_LATER': 'bg-indigo-50 text-indigo-600 border-indigo-100',
+                        'PARTIAL_PAID': 'bg-purple-50 text-purple-600 border-purple-100',
+                        'ALREADY_PAID': 'bg-purple-50 text-purple-600 border-purple-100',
+                        'DEATH': 'bg-gray-900 text-white border-gray-800',
+                        'LOST': 'bg-gray-100 text-gray-600 border-gray-200'
+                      };
+                      const bgClass = bgColors[log.outcome] || bgColors[log.call_status] || 'bg-green-50 text-emerald-600 border-emerald-100';
+                    %>
+                    <%= bgClass %>">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                    <%= (log.outcome && log.outcome !== 'PENDING' ? log.outcome : log.call_status || 'Interested').toLowerCase().replace(/_/g, ' ') %>
+                  </div>
+                  <div class="flex items-center gap-1.5 text-gray-400">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-tight"><%= (log.telecaller ? (log.telecaller.device_alias || log.telecaller.name) : 'Unknown') %></span>
+                  </div>
+                </div>
+
+                <!-- Audio Player row (Explicit Visibility) -->
+                <div class="audio-container w-full pt-1">
+                   <% if (log.recording_url) { %>
+                     <audio controls src="<%= log.recording_url %>" class="h-10 w-full outline-none bg-gray-50 rounded-xl"></audio>
+                   <% } else { %>
+                     <div class="h-10 w-full bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200">
+                        <span class="text-xs text-gray-400 font-medium italic">Recording pending sync</span>
+                     </div>
+                   <% } %>
+                </div>
+             </div>
+
+          <% }); } %>
+       </div>
+       
+       <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+          <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+             <div class="text-xs text-gray-500 font-medium" id="pagination-info">Showing <span id="start-range">0</span> to <span id="end-range">0</span> of <span id="total-count">0</span> logs</div>
+             <div class="hidden md:flex items-center gap-2">
+               <button id="prev-page" class="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-primary transition-all"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+               <div id="page-numbers" class="flex items-center gap-1"></div>
+               <button id="next-page" class="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-primary transition-all"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></button>
+             </div>
+             <div class="md:hidden w-full"><button id="activity-load-more" class="w-full py-3 rounded-2xl border-2 border-gray-100 bg-white text-xs font-bold text-gray-500 hover:border-primary hover:text-primary shadow-sm">Load More Activity</button></div>
+          </div>
+       </div>
+    </div>
+
+    <!-- Campaigns Section -->
+    <div x-show="activeTab === 'campaigns'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" class="md:bg-white md:shadow md:rounded-2xl overflow-hidden md:border md:border-gray-100">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <h3 class="text-lg leading-6 font-bold text-gray-900 whitespace-nowrap">Campaign Management</h3>
+        <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm group focus-within:border-primary/30 transition-all">
+          <svg class="h-3.5 w-3.5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <input type="text" id="campaigns-search" placeholder="Search..." class="bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs font-bold text-gray-700 placeholder-gray-400 p-0 w-32 md:w-40">
+        </div>
+      </div>
+
+      <div class="overflow-x-auto relative hidden-scrollbar border-t border-gray-100 hidden md:block">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm border-b border-gray-200">
+            <tr>
+              <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Campaign / File Name</th>
+              <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total</th>
+              <th class="px-6 py-3 text-center text-[10px] font-bold text-green-600 uppercase tracking-wider">Processed</th>
+              <th class="px-6 py-3 text-center text-[10px] font-bold text-amber-600 uppercase tracking-wider">In Progress</th>
+              <th class="px-6 py-3 text-center text-[10px] font-bold text-primary uppercase tracking-wider">Available</th>
+              <th class="px-6 py-3 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="campaigns-table-body" class="bg-white divide-y divide-gray-100">
+            <% if (locals.campaigns && campaigns.length > 0) { %>
+              <% campaigns.forEach(function(camp) { %>
+                <tr class="campaign-row hover:bg-gray-50 transition-colors animate-fade-in-up">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 rounded-xl bg-container flex items-center justify-center text-primary mr-4">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                       </div>
-                   </td>
+                      <div>
+                        <p class="text-sm font-bold text-gray-900 capitalize text-wrap max-w-[200px] truncate" title="<%= camp.name %>"><%= camp.name %></p>
+                        <p class="text-[10px] text-gray-400 font-medium">Batch Upload</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-bold"><%= camp.total %></span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-bold"><%= camp.processed %></span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold"><%= camp.inProgress %></span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-red-50 text-primary text-xs font-bold"><%= camp.available %></span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right">
+                    <button 
+                      @click="campaignToDelete = '<%= camp.name.replace(/'/g, "\\'") %>'; pendingLeadsToDelete = <%= camp.inProgress + camp.available %>; deleteModalOpen = true"
+                      class="p-2.5 rounded-xl bg-red-50 text-primary hover:bg-primary hover:text-white transition-all duration-300 shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                      :disabled="<%= (camp.inProgress + camp.available) === 0 %>"
+                    >
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </td>
+                </tr>
+              <% }); %>
+            <% } else { %>
+              <tr>
+                <td colspan="5" class="px-6 py-12 text-center text-gray-400 italic font-medium">No active campaigns found</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Campaign Pagination Footer -->
+      <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+            Showing <span id="campaigns-start-range" class="text-gray-900">0</span> to <span id="campaigns-end-range" class="text-gray-900">0</span> of <span id="campaigns-total-count" class="text-gray-900">0</span> campaigns
+          </div>
+          
+          <!-- Desktop Pagination -->
+          <div class="hidden md:flex items-center gap-2">
+            <button id="campaigns-prev-page" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <div id="campaigns-page-numbers" class="flex items-center gap-1">
+              <!-- Page numbers injected here -->
+            </div>
+            <button id="campaigns-next-page" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+
+          <!-- Mobile Load More -->
+          <div class="md:hidden w-full">
+            <button id="campaigns-load-more" class="w-full py-3 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all">
+              Load More Campaigns
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Card View (Campaigns) -->
+      <div id="campaigns-cards-container" class="md:hidden divide-y divide-gray-100">
+         <% if (locals.campaigns && campaigns.length > 0) { %>
+           <% campaigns.forEach(function(camp) { %>
+              <div class="campaign-card p-5 hover:bg-gray-50 transition-colors">
+                <div class="flex justify-between items-start mb-4">
+                  <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-xl bg-container flex items-center justify-center text-primary mr-3">
+                      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    </div>
+                    <div>
+                      <h4 class="text-base font-bold text-gray-900 capitalize"><%= camp.name %></h4>
+                    </div>
+                  </div>
+                  <button 
+                    @click="campaignToDelete = '<%= camp.name.replace(/'/g, "\\'") %>'; pendingLeadsToDelete = <%= camp.inProgress + camp.available %>; deleteModalOpen = true"
+                    class="p-2 rounded-lg bg-red-50 text-primary hover:bg-primary hover:text-white transition-all shadow-sm disabled:opacity-30"
+                    :disabled="<%= (camp.inProgress + camp.available) === 0 %>"
+                  >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
+                <div class="grid grid-cols-4 gap-2">
+                  <div class="bg-gray-50 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase mb-1">Total</p>
+                    <p class="text-sm font-black text-gray-900"><%= camp.total %></p>
+                  </div>
+                  <div class="bg-green-50/50 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-green-600 font-bold uppercase mb-1">Processed</p>
+                    <p class="text-sm font-black text-green-700"><%= camp.processed %></p>
+                  </div>
+                  <div class="bg-amber-50/50 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-amber-600 font-bold uppercase mb-1">In Progress</p>
+                    <p class="text-sm font-black text-amber-700"><%= camp.inProgress %></p>
+                  </div>
+                  <div class="bg-red-50/50 rounded-xl p-3 text-center">
+                    <p class="text-[10px] text-primary font-bold uppercase mb-1">Available</p>
+                    <p class="text-sm font-black text-primary"><%= camp.available %></p>
+                  </div>
+                </div>
+              </div>
+           <% }); %>
+         <% } %>
+      </div>
+    </div>
+
+    <!-- Performance Tab -->
+    <div x-show="activeTab === 'performance'" 
+         x-transition:enter="transition ease-out duration-300" 
+         x-transition:enter-start="opacity-0 transform translate-y-4" 
+         x-transition:enter-end="opacity-100 transform translate-y-0" 
+         class="md:bg-white md:shadow md:rounded-2xl overflow-hidden md:border md:border-gray-100">
+      
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <h3 class="text-lg leading-6 font-bold text-gray-900 whitespace-nowrap">Agent Performance</h3>
+        
+        <!-- Filter Row: Search, Date Filter -->
+        <div class="flex flex-wrap items-center justify-end gap-3 w-full md:w-auto">
+          <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm group focus-within:border-primary/30 transition-all">
+            <svg class="h-3.5 w-3.5 text-gray-400 group-focus-within:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input type="text" 
+                   id="performance-search" 
+                   placeholder="Search Agent..." 
+                   class="bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-xs font-bold text-gray-700 placeholder-gray-400 p-0 w-32 md:w-40">
+          </div>
+
+          <form action="/owner" method="GET" class="flex items-center gap-3 m-0 p-0">
+            <input type="hidden" name="tab" value="performance">
+            <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">From</span>
+              <input type="date" name="perfStart" value="<%= locals.perfStart %>" class="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 p-0 cursor-pointer">
+            </div>
+            <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <span class="text-[10px] font-black text-gray-400 uppercase tracking-wider">To</span>
+              <input type="date" name="perfEnd" value="<%= locals.perfEnd %>" class="bg-transparent border-none text-xs font-bold text-gray-700 focus:ring-0 p-0 cursor-pointer">
+            </div>
+            <button type="submit"
+               class="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-200 hover:-translate-y-0.5 active:translate-y-0 shrink-0">
+              Apply
+            </button>
+          </form>
+        </div>
+      </div>
+
+       <div class="overflow-x-auto relative hidden-scrollbar border-t border-gray-100 hidden md:block">
+           <table class="min-w-full divide-y divide-gray-200">
+             <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm border-b border-gray-200">
+                <tr>
+                  <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Telecaller Name</th>
+                  <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Last Seen</th>
+                  <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Calls</th>
+                  <th class="px-6 py-3 text-center text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Answered</th>
+                  <th class="px-6 py-3 text-center text-[10px] font-bold text-orange-500 uppercase tracking-wider">Missed</th>
+                  <th class="px-6 py-3 text-center text-[10px] font-bold text-red-500 uppercase tracking-wider">Rejected</th>
+                  <th class="px-6 py-3 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Talk Time</th>
+                </tr>
+             </thead>
+             <tbody id="performance-table-body" class="bg-white divide-y divide-gray-200">
+               <% if (locals.telecallerPerformance && telecallerPerformance.length > 0) { %>
+                 <% telecallerPerformance.forEach(function(perf) { %>
+                    <tr class="perf-row hover:bg-gray-50 transition-colors animate-fade-in-up">
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                          <span class="text-sm font-bold text-gray-900"><%= perf.name %></span>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="tc-status-label text-xs font-semibold text-gray-400" data-tc-name="<%= perf.name %>">...</span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="tc-last-seen text-xs font-medium text-gray-400" data-tc-name="<%= perf.name %>">...</span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900"><%= perf.total %></td>
+                      <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-emerald-600"><%= perf.answered %></td>
+                      <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-orange-500"><%= perf.missed %></td>
+                      <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-red-500"><%= perf.rejected %></td>
+                      <td class="px-6 py-4 whitespace-nowrap text-center text-xs font-bold text-gray-900"><%= perf.talkTimeFormatted %></td>
+                    </tr>
+                 <% }); %>
+               <% } else { %>
+                 <tr>
+                     <td colspan="8" class="px-6 py-12 text-center text-gray-400 italic font-medium">No active telecallers found</td>
                  </tr>
                <% } %>
              </tbody>
            </table>
        </div>
-    </div>
-  </div>
+
+       <!-- Mobile Card View (Performance) -->
+       <div id="performance-cards-container" class="md:hidden pb-12 divide-y divide-gray-100">
+          <% if (locals.telecallerPerformance && telecallerPerformance.length > 0) { 
+               telecallerPerformance.forEach(function(perf) { %>
+              <div class="perf-card bg-white p-5 hover:bg-gray-50 transition-colors animate-fade-in-up">
+                <div class="flex justify-between items-center mb-4">
+                  <h4 class="text-lg font-bold text-gray-900"><%= perf.name %></h4>
+                  <div class="flex items-center gap-3">
+                    <span class="tc-status-label text-[10px] font-bold text-gray-400" data-tc-name="<%= perf.name %>">...</span>
+                    <span class="tc-last-seen text-[10px] text-gray-400 font-medium" data-tc-name="<%= perf.name %>">...</span>
+                  </div>
+                </div>
+               
+               <div class="bg-gray-50 rounded-xl p-3 flex justify-between items-center mb-3">
+                 <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total Calls</span>
+                 <span class="text-lg font-black text-gray-900"><%= perf.total %></span>
+               </div>
+               
+               <div class="grid grid-cols-3 gap-2 mb-3">
+                 <div class="bg-emerald-50/50 rounded-xl p-2 flex flex-col items-center">
+                   <span class="text-[10px] font-bold text-emerald-600/70 uppercase tracking-widest mb-1">Answered</span>
+                   <span class="text-base font-black text-emerald-600"><%= perf.answered %></span>
+                 </div>
+                 <div class="bg-orange-50/50 rounded-xl p-2 flex flex-col items-center">
+                   <span class="text-[10px] font-bold text-orange-500/70 uppercase tracking-widest mb-1">Missed</span>
+                   <span class="text-base font-black text-orange-500"><%= perf.missed %></span>
+                 </div>
+                 <div class="bg-red-50/50 rounded-xl p-2 flex flex-col items-center">
+                   <span class="text-[10px] font-bold text-red-500/70 uppercase tracking-widest mb-1">Rejected</span>
+                   <span class="text-base font-black text-red-500"><%= perf.rejected %></span>
+                 </div>
+               </div>
+
+               <div class="bg-gray-50 rounded-xl p-3 flex items-center justify-between">
+                 <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total Talk Time</span>
+                 <span class="text-sm font-black text-gray-900"><%= perf.talkTimeFormatted %></span>
+               </div>
+             </div>
+          <% }); } else { %>
+             <div class="p-8 text-center text-gray-400 italic font-medium">No active telecallers found</div>
+          <% } %>
+       </div>
+
+       <!-- Performance Pagination Footer -->
+       <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
+         <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+           <div class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+             Showing <span id="performance-start-range" class="text-gray-900">0</span> to <span id="performance-end-range" class="text-gray-900">0</span> of <span id="performance-total-count" class="text-gray-900">0</span> agents
+           </div>
+           
+           <!-- Desktop Pagination -->
+           <div class="hidden md:flex items-center gap-2">
+             <button id="performance-prev-page" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+             </button>
+             <div id="performance-page-numbers" class="flex items-center gap-1">
+               <!-- Page numbers injected here -->
+             </div>
+             <button id="performance-next-page" class="p-2 rounded-lg bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg>
+             </button>
+           </div>
+
+           <!-- Mobile Load More -->
+           <div class="md:hidden w-full">
+             <button id="performance-load-more" class="w-full py-3 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all">
+               Load More Agents
+             </button>
+           </div>
+         </div>
+        </div>
+     </div>
+
+    <!-- Telecallers Tab -->
+   </div>
 </div>
 
 <script>
+  let currentPage = 1;
+  let leadsPage = 1;
+  let campaignsPage = 1;
+  let performancePage = 1;
+  const rowsPerPage = 5;
+  const mobilePerPage = 5;
+  let currentMobilePage = 1;
+  let currentLeadsMobilePage = 1;
+  let currentCampaignsMobilePage = 1;
+  let currentPerformanceMobilePage = 1;
+  
+  // Global function for Alpine to open lead details
+  window.openLeadDetails = function(leadData, interactionStatus = null) {
+    let lead = leadData;
+    if (typeof leadData === 'string') {
+      try {
+        lead = JSON.parse(leadData);
+      } catch (e) {
+        console.error("Failed to parse lead data", e);
+        return;
+      }
+    }
+    
+    // Alpine v3 way to access global state
+    const bodyData = Alpine.$data(document.body);
+    if (bodyData) {
+      bodyData.selectedLead = lead;
+      // If we have a specific call outcome, use it, otherwise use lead status
+      bodyData.displayStatus = (interactionStatus || lead.status || 'PENDING').toUpperCase();
+      bodyData.leadModalOpen = true;
+    }
+  };
+
   function formatDuration(totalSeconds) {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
-  function getStatusBadge(status) {
-    let badgeClass = 'bg-gray-100 text-gray-800';
-    if (['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(status)) badgeClass = 'bg-green-100 text-green-800';
-    else if (['LOST', 'REJECTED', 'CANCELLED', 'MISSED', 'BUSY'].includes(status)) badgeClass = 'bg-red-100 text-red-800';
-    else if (status === 'REMIND_LATER') badgeClass = 'bg-blue-100 text-blue-800';
-    else if (status === 'PENDING') badgeClass = 'bg-amber-100 text-amber-800';
-    
-    return `<span class="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${status}</span>`;
+  async function updatePagination() {
+    const tbody = document.getElementById('live-calls');
+    const mobileContainer = document.getElementById('activity-cards-container');
+    if (!tbody || !mobileContainer) return;
+
+    try {
+      const searchQuery = encodeURIComponent((document.getElementById('detailed-view-search')?.value || '').trim());
+      const response = await fetch(`/owner/api/call-logs?page=${currentPage}&search=${searchQuery}`);
+      const result = await response.json();
+      if (!result.success) return;
+
+      const callLogs = result.data;
+      const totalCount = result.totalCount;
+      const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
+
+      // Rebuild Desktop Table
+      tbody.innerHTML = '';
+      callLogs.forEach(log => {
+        const tr = document.createElement('tr');
+        tr.id = `log-${log.id}`;
+        tr.className = "log-row hover:bg-gray-50 transition-colors animate-fade-in-up cursor-pointer";
+        const leadStr = JSON.stringify(log.lead);
+        const safeOutcome = encodeURIComponent(log.outcome || log.call_status || '');
+        tr.onclick = () => openLeadDetails(leadStr, decodeURIComponent(safeOutcome));
+        
+        const dateStr = new Date(log.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true });
+        const durMins = Math.floor(log.duration_seconds / 60).toString().padStart(2, '0');
+        const durSecs = (log.duration_seconds % 60).toString().padStart(2, '0');
+        const callStatus = log.call_status ? log.call_status.toLowerCase() : '';
+        const outcome = (log.outcome && log.outcome !== 'PENDING' ? log.outcome : '—').toLowerCase().replace(/_/g, ' ');
+        const tcName = log.telecaller?.device_alias || log.telecaller?.name || 'Unknown';
+
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${escapeHtml(log.lead.name)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${escapeHtml(log.lead.phone)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${dateStr}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${durMins}:${durSecs}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize">${escapeHtml(callStatus)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize">${escapeHtml(outcome)}</td>
+          <td class="px-6 py-4"><div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="${escapeHtml(log.notes || '')}">${escapeHtml(log.notes || '—')}</div></td>
+          <td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-700">${escapeHtml(tcName)}</td>
+          <td class="px-6 py-4 whitespace-nowrap"><div class="audio-container">${log.recording_url ? `<audio controls src="${log.recording_url}" class="h-6 w-32 outline-none"></audio>` : ''}</div></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Mobile Card rebuilding is skipped to keep it simple, we just hide old cards
+      mobileContainer.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">Mobile view requires page reload for paginated data in this simplified implementation.</div>';
+
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + callLogs.length;
+
+      if (document.getElementById('start-range')) document.getElementById('start-range').innerText = totalCount === 0 ? 0 : start + 1;
+      if (document.getElementById('end-range')) document.getElementById('end-range').innerText = Math.min(end, totalCount);
+      if (document.getElementById('total-count')) document.getElementById('total-count').innerText = totalCount;
+      if (document.getElementById('prev-page')) document.getElementById('prev-page').disabled = currentPage === 1;
+      if (document.getElementById('next-page')) document.getElementById('next-page').disabled = currentPage >= totalPages;
+
+    } catch (e) {
+      console.error('Pagination Error:', e);
+    }
   }
 
-  socket.emit('join_dashboard', '<%= user.id %>');
+  async function updateLeadsPagination() {
+    const tbody = document.getElementById('leads-table-body');
+    const mobileContainer = document.getElementById('leads-cards-container');
+    if (!tbody || !mobileContainer) return;
+    
+    try {
+      const leadsSearchQuery = encodeURIComponent((document.getElementById('leads-search')?.value || '').trim());
+      const response = await fetch(`/owner/api/leads?page=${leadsPage}&search=${leadsSearchQuery}`);
+      const result = await response.json();
+      if (!result.success) return;
 
-  socket.on('new_call_log', (data) => {
-    const list = document.getElementById('live-calls');
-    const emptyState = document.getElementById('empty-state');
-    if (emptyState) emptyState.remove();
+      const leads = result.data;
+      const totalCount = result.totalCount;
+      const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
 
-    // Increment Answered Stat if answered/positive
-    if(['ANSWERED', 'INTERESTED', 'ORDERED', 'BOOKED'].includes(data.status)) {
-      const ansEl = document.getElementById('stat-answered');
-      if(ansEl) ansEl.innerText = parseInt(ansEl.innerText) + 1;
+      // Rebuild Desktop Table
+      tbody.innerHTML = '';
+      leads.forEach(lead => {
+        const tr = document.createElement('tr');
+        tr.className = "lead-row hover:bg-gray-50 transition-colors cursor-pointer";
+        const leadStr = JSON.stringify(lead);
+        tr.onclick = () => openLeadDetails(leadStr);
+        
+        const dateStr = new Date(lead.created_at).toLocaleDateString('en-IN');
+
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${escapeHtml(lead.name)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${escapeHtml(lead.phone)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${dateStr}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      mobileContainer.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">Mobile view requires page reload for paginated data in this simplified implementation.</div>';
+
+      const start = (leadsPage - 1) * rowsPerPage;
+      const end = start + leads.length;
+
+      if (document.getElementById('leads-start-range')) document.getElementById('leads-start-range').innerText = totalCount === 0 ? 0 : start + 1;
+      if (document.getElementById('leads-end-range')) document.getElementById('leads-end-range').innerText = Math.min(end, totalCount);
+      if (document.getElementById('leads-total-count')) document.getElementById('leads-total-count').innerText = totalCount;
+      if (document.getElementById('leads-prev-page')) document.getElementById('leads-prev-page').disabled = leadsPage === 1;
+      if (document.getElementById('leads-next-page')) document.getElementById('leads-next-page').disabled = leadsPage >= totalPages;
+
+    } catch (e) {
+      console.error('Leads Pagination Error:', e);
     }
+  }
 
-    const tr = document.createElement('tr');
-    tr.id = `log-${data.log_id}`;
-    tr.className = "hover:bg-gray-50 transition-colors animate-fade-in-up";
+  function updateCampaignsPagination() {
+    const tbody = document.getElementById('campaigns-table-body');
+    const mobileContainer = document.getElementById('campaigns-cards-container');
+    if (!tbody || !mobileContainer) return;
     
-    const timestamp = new Date().toLocaleString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const searchQuery = (document.getElementById('campaigns-search')?.value || '').toLowerCase().trim();
+    const rows = Array.from(tbody.querySelectorAll('.campaign-row'));
+    const cards = Array.from(mobileContainer.querySelectorAll('.campaign-card'));
+    
+    const filteredRows = rows.filter(row => {
+      if (!searchQuery) return true;
+      const visibleText = row.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      return false;
+    });
 
-    tr.innerHTML = `
-      <td class="px-6 py-4 whitespace-nowrap">
-        <div class="text-sm font-bold text-gray-900">${data.lead_name}</div>
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${data.lead_phone}</td>
-      <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${timestamp}</td>
-      <td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${formatDuration(data.duration)}</td>
-      <td class="px-6 py-4 whitespace-nowrap lead-status-cell">${getStatusBadge(data.status)}</td>
-      <td class="px-6 py-4 whitespace-nowrap">${getStatusBadge(data.status)}</td>
-      <td class="px-6 py-4">
-        <div class="text-[11px] text-gray-600 italic max-w-xs truncate" title="${data.notes || ''}">${data.notes || '—'}</div>
-        <div class="mt-2 audio-container"></div>
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap">
-        <div class="text-xs font-medium text-gray-700">${data.telecaller_name}</div>
-      </td>
-    `;
+    const filteredCards = cards.filter(card => {
+      if (!searchQuery) return true;
+      const visibleText = card.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      return false;
+    });
+
+    rows.forEach(row => row.style.display = 'none');
+    cards.forEach(card => card.style.display = 'none');
+
+    const totalCount = filteredRows.length;
+    const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
+    if (campaignsPage > totalPages) campaignsPage = totalPages;
     
-    list.prepend(tr);
+    const start = (campaignsPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
     
-    // limit to 20
-    if (list.children.length > 20) {
-      list.removeChild(list.lastChild);
+    filteredRows.forEach((row, index) => {
+      if (index >= start && index < end) row.style.display = '';
+    });
+    
+    const mobileEnd = currentCampaignsMobilePage * mobilePerPage;
+    filteredCards.forEach((card, index) => {
+      if (index < mobileEnd) card.style.display = '';
+    });
+    const loadMoreBtn = document.getElementById('campaigns-load-more');
+    if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= cards.length ? 'none' : '';
+    if (document.getElementById('campaigns-start-range')) document.getElementById('campaigns-start-range').innerText = totalCount === 0 ? 0 : start + 1;
+    if (document.getElementById('campaigns-end-range')) document.getElementById('campaigns-end-range').innerText = Math.min(end, totalCount);
+    if (document.getElementById('campaigns-total-count')) document.getElementById('campaigns-total-count').innerText = totalCount;
+    if (document.getElementById('campaigns-prev-page')) document.getElementById('campaigns-prev-page').disabled = campaignsPage === 1;
+    if (document.getElementById('campaigns-next-page')) document.getElementById('campaigns-next-page').disabled = campaignsPage === totalPages;
+    const pageContainer = document.getElementById('campaigns-page-numbers');
+    if (pageContainer) {
+        pageContainer.innerHTML = '';
+        // Numbers removed per user request
     }
-  });
+  }
 
-  socket.on('recording_ready', (data) => {
-    const logItem = document.getElementById(`log-${data.log_id}`);
-    if (logItem) {
-      const container = logItem.querySelector('.audio-container');
-      if (container && !container.querySelector('audio')) {
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = data.recording_url;
-        audio.className = "h-6 w-32 outline-none";
-        container.appendChild(audio);
+  document.getElementById('prev-page').onclick = () => { if (currentPage > 1) { currentPage--; updatePagination(); } };
+  document.getElementById('next-page').onclick = () => { currentPage++; updatePagination(); };
+  document.getElementById('activity-load-more').onclick = () => { currentMobilePage++; updatePagination(); };
+  document.getElementById('leads-prev-page').onclick = () => { if (leadsPage > 1) { leadsPage--; updateLeadsPagination(); } };
+  document.getElementById('leads-next-page').onclick = () => { leadsPage++; updateLeadsPagination(); };
+  document.getElementById('leads-load-more').onclick = () => { currentLeadsMobilePage++; updateLeadsPagination(); };
+  
+  if (document.getElementById('campaigns-prev-page')) document.getElementById('campaigns-prev-page').onclick = () => { if (campaignsPage > 1) { campaignsPage--; updateCampaignsPagination(); } };
+  if (document.getElementById('campaigns-next-page')) document.getElementById('campaigns-next-page').onclick = () => { campaignsPage++; updateCampaignsPagination(); };
+  if (document.getElementById('campaigns-load-more')) document.getElementById('campaigns-load-more').onclick = () => { currentCampaignsMobilePage++; updateCampaignsPagination(); };
+
+  const searchInput = document.getElementById('detailed-view-search');
+  if (searchInput) {
+    let debounceTimer;
+    searchInput.oninput = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        currentPage = 1;
+        updatePagination();
+      }, 300);
+    };
+  }
+
+  const leadsSearchInput = document.getElementById('leads-search');
+  if (leadsSearchInput) {
+    let debounceTimer;
+    leadsSearchInput.oninput = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        leadsPage = 1;
+        updateLeadsPagination();
+      }, 300);
+    };
+  }
+
+  const campaignsSearchInput = document.getElementById('campaigns-search');
+  if (campaignsSearchInput) {
+    let debounceTimer;
+    campaignsSearchInput.oninput = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        campaignsPage = 1;
+        updateCampaignsPagination();
+      }, 300);
+    };
+  }
+
+  function updatePerformancePagination() {
+    const tbody = document.getElementById('performance-table-body');
+    const mobileContainer = document.getElementById('performance-cards-container');
+    if (!tbody || !mobileContainer) return;
+    
+    const searchQuery = (document.getElementById('performance-search')?.value || '').toLowerCase().trim();
+    const rows = Array.from(tbody.querySelectorAll('.perf-row'));
+    const cards = Array.from(mobileContainer.querySelectorAll('.perf-card'));
+    
+    const filteredRows = rows.filter(row => {
+      if (!searchQuery) return true;
+      const visibleText = row.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      return false;
+    });
+
+    const filteredCards = cards.filter(card => {
+      if (!searchQuery) return true;
+      const visibleText = card.innerText.toLowerCase();
+      if (visibleText.includes(searchQuery)) return true;
+      return false;
+    });
+
+    rows.forEach(row => row.style.display = 'none');
+    cards.forEach(card => card.style.display = 'none');
+
+    const totalCount = filteredRows.length;
+    const totalPages = Math.ceil(totalCount / rowsPerPage) || 1;
+    if (performancePage > totalPages) performancePage = totalPages;
+    
+    const start = (performancePage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    
+    filteredRows.forEach((row, index) => {
+      if (index >= start && index < end) row.style.display = '';
+    });
+    
+    const mobileEnd = currentPerformanceMobilePage * mobilePerPage;
+    filteredCards.forEach((card, index) => {
+      if (index < mobileEnd) card.style.display = '';
+    });
+    
+    const loadMoreBtn = document.getElementById('performance-load-more');
+    if(loadMoreBtn) loadMoreBtn.style.display = mobileEnd >= cards.length ? 'none' : '';
+    
+    if (document.getElementById('performance-start-range')) document.getElementById('performance-start-range').innerText = totalCount === 0 ? 0 : start + 1;
+    if (document.getElementById('performance-end-range')) document.getElementById('performance-end-range').innerText = Math.min(end, totalCount);
+    if (document.getElementById('performance-total-count')) document.getElementById('performance-total-count').innerText = totalCount;
+    if (document.getElementById('performance-prev-page')) document.getElementById('performance-prev-page').disabled = performancePage === 1;
+    if (document.getElementById('performance-next-page')) document.getElementById('performance-next-page').disabled = performancePage === totalPages;
+    
+    const pageContainer = document.getElementById('performance-page-numbers');
+    if (pageContainer) {
+        pageContainer.innerHTML = '';
+        // Numbers removed per user request
+    }
+  }
+
+  if (document.getElementById('performance-prev-page')) document.getElementById('performance-prev-page').onclick = () => { if (performancePage > 1) { performancePage--; updatePerformancePagination(); } };
+  if (document.getElementById('performance-next-page')) document.getElementById('performance-next-page').onclick = () => { performancePage++; updatePerformancePagination(); };
+  if (document.getElementById('performance-load-more')) document.getElementById('performance-load-more').onclick = () => { currentPerformanceMobilePage++; updatePerformancePagination(); };
+
+  const performanceSearchInput = document.getElementById('performance-search');
+  if (performanceSearchInput) {
+    let debounceTimer;
+    performanceSearchInput.oninput = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        performancePage = 1;
+        updatePerformancePagination();
+      }, 300);
+    };
+  }
+
+  updatePagination();
+  updateLeadsPagination();
+  updateCampaignsPagination();
+  updatePerformancePagination();
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+
+  if (!socket) {
+    console.warn('Socket not available — real-time updates disabled');
+  } else {
+    socket.emit('join_dashboard', '<%= user.id %>');
+  }
+
+  if (socket) {
+    socket.on('new_call_log', (data) => {
+      const list = document.getElementById('live-calls');
+      const cardList = document.getElementById('activity-cards-container');
+      const existingRow = document.getElementById(`log-${data.log_id}`);
+      const existingCard = document.getElementById(`card-log-${data.log_id}`);
+      const outcomeText = data.outcome && data.outcome !== 'PENDING' ? data.outcome.toLowerCase().replace(/_/g, ' ') : (data.call_status || 'Interested').toLowerCase().replace(/_/g, ' ');
+      const statusKey = (data.outcome && data.outcome !== 'PENDING' ? data.outcome : (data.call_status || 'INTERESTED')).toUpperCase();
+
+      const getBgClass = (status) => {
+          const bgColors = {
+            'PENDING': 'bg-amber-50 text-amber-600 border-amber-100',
+            'INTERESTED': 'bg-green-50 text-emerald-600 border-emerald-100',
+            'ORDERED': 'bg-green-50 text-emerald-600 border-emerald-100',
+            'BOOKED': 'bg-green-50 text-emerald-600 border-emerald-100',
+            'BANK_PTP': 'bg-green-50 text-emerald-600 border-emerald-100',
+            'FPTP': 'bg-green-50 text-emerald-600 border-emerald-100',
+            'PTP': 'bg-green-50 text-emerald-600 border-emerald-100',
+            'REJECTED': 'bg-red-50 text-red-600 border-red-100',
+            'CANCELLED': 'bg-red-50 text-red-600 border-red-100',
+            'CALL_DISCONNECT': 'bg-red-50 text-red-600 border-red-100',
+            'OUT_OF_SERVICE': 'bg-red-50 text-red-600 border-red-100',
+            'SWITCH_OFF': 'bg-red-50 text-red-600 border-red-100',
+            'INCOMING_NOT_AVAIABLE': 'bg-red-50 text-red-600 border-red-100',
+            'RTP': 'bg-red-50 text-red-600 border-red-100',
+            'MISSED': 'bg-gray-50 text-gray-500 border-gray-100',
+            'BUSY': 'bg-gray-50 text-gray-500 border-gray-100',
+            'NOT_REACHABLE': 'bg-gray-50 text-gray-500 border-gray-100',
+            'RNR': 'bg-gray-50 text-gray-500 border-gray-100',
+            'CB_REQUEST': 'bg-blue-50 text-blue-600 border-blue-100',
+            'LEFT_MSG': 'bg-blue-50 text-blue-600 border-blue-100',
+            'REMIND_LATER': 'bg-indigo-50 text-indigo-600 border-indigo-100',
+            'PARTIAL_PAID': 'bg-purple-50 text-purple-600 border-purple-100',
+            'ALREADY_PAID': 'bg-purple-50 text-purple-100 border-purple-100',
+            'DEATH': 'bg-gray-900 text-white border-gray-800',
+            'LOST': 'bg-gray-100 text-gray-600 border-gray-200'
+          };
+          return bgColors[status] || 'bg-green-50 text-emerald-600 border-emerald-100';
+      };
+
+      if (existingRow) {
+        const cells = existingRow.querySelectorAll('td');
+        if (cells[5]) cells[5].innerText = outcomeText;
+        if (cells[6]) cells[6].innerText = data.notes || '—';
+        if(existingCard) {
+           const badge = existingCard.querySelector('.activity-card .inline-flex');
+           const notesDiv = existingCard.querySelector('.activity-card p.italic');
+           if(badge) { 
+             badge.className = `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm ${getBgClass(statusKey)}`;
+             badge.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg> ${escapeHtml(outcomeText)}`;
+           }
+           if(notesDiv) notesDiv.innerText = data.notes;
+        }
+        return;
       }
-    }
+
+      if (!list) return;
+
+      const tr = document.createElement('tr');
+      tr.id = `log-${data.log_id}`;
+      tr.className = "log-row hover:bg-gray-50 transition-colors animate-fade-in-up";
+      const ts = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12: true });
+      
+      // Prepare lead data for clicking new rows
+      const leadData = {
+        name: data.lead_name,
+        phone: data.lead_phone,
+        status: 'PENDING',
+        additional_data: data.additional_data || {}
+      };
+      const leadStr = JSON.stringify(leadData);
+      const safeOutcome = encodeURIComponent(data.outcome || data.call_status || '');
+
+      tr.innerHTML = `<td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${escapeHtml(data.lead_name)}</td><td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">${escapeHtml(data.lead_phone)}</td><td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-500 font-medium">${ts}</td><td class="px-6 py-4 whitespace-nowrap text-[11px] text-gray-700 font-bold">${formatDuration(data.duration)}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize">${escapeHtml(data.call_status ? data.call_status.toLowerCase() : '')}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 capitalize">${escapeHtml(outcomeText)}</td><td class="px-6 py-4 text-[11px] text-gray-600 italic max-w-xs truncate">${escapeHtml(data.notes || '—')}</td><td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-700">${escapeHtml(data.telecaller_name)}</td><td class="px-6 py-4 whitespace-nowrap"><div class="audio-container"></div></td>`;
+      
+      tr.onclick = () => window.openLeadDetails(leadStr, decodeURIComponent(safeOutcome));
+      tr.style.cursor = 'pointer';
+
+      list.prepend(tr);
+
+      if (cardList) {
+        const today = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
+        let todayHeader = Array.from(cardList.querySelectorAll('.date-header')).find(h => h.innerText.trim() === today);
+        if(!todayHeader) {
+           todayHeader = document.createElement('div');
+           todayHeader.className = "date-header px-4 py-3 bg-white/95 backdrop-blur-md text-[10px] font-bold text-gray-400 sticky top-0 z-10 border-b border-gray-100 uppercase tracking-[0.2em] mb-6 mt-10 first:mt-0";
+           todayHeader.innerText = today;
+           cardList.prepend(todayHeader);
+        }
+
+        const card = document.createElement('div');
+        card.id = `card-log-${data.log_id}`;
+        card.className = "activity-card bg-white p-5 mb-8 shadow-[0_15px_50px_rgba(0,0,0,0.15)] border border-gray-100 rounded-2xl mx-3 animate-fade-in-up cursor-pointer";
+        card.onclick = () => window.openLeadDetails(leadStr, decodeURIComponent(safeOutcome));
+        const timeStr = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true });
+        
+        card.innerHTML = `
+          <div class="mb-3">
+            <h4 class="text-lg font-bold text-gray-900 leading-tight tracking-tight">${escapeHtml(data.lead_name)}</h4>
+            <p class="text-sm text-gray-500 font-bold mt-0.5 tracking-tight">${escapeHtml(data.lead_phone)}</p>
+          </div>
+          <div class="grid grid-cols-3 gap-0.5 py-3 border-y border-gray-100 mb-3">
+            <div class="flex flex-col items-center text-center"><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Time</p><p class="text-sm text-gray-800 font-bold">${timeStr}</p></div>
+            <div class="flex flex-col items-center text-center border-x border-gray-100 px-1"><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Duration</p><p class="text-sm text-gray-800 font-bold">${formatDuration(data.duration)}</p></div>
+            <div class="flex flex-col items-center text-center"><p class="text-[10px] text-gray-400 font-bold uppercase tracking-wide mb-1">Status</p><p class="text-sm text-emerald-600 font-bold uppercase tracking-wide">${escapeHtml(data.call_status ? data.call_status.toLowerCase() : 'Answered')}</p></div>
+          </div>
+          ${data.notes ? `<div class="flex gap-3 mb-4 px-1"><div class="text-primary opacity-30 shrink-0"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V5C14.017 3.89543 14.9124 3 16.017 3H19.017C21.2261 3 23.017 4.79086 23.017 7V15C23.017 18.3137 20.3307 21 17.017 21H14.017ZM1.017 21L1.017 18C1.017 16.8954 1.91243 16 3.017 16H6.017C6.56928 16 7.017 15.5523 7.017 15V9C7.017 8.44772 6.56928 8 6.017 8H3.017C1.91243 8 1.017 7.10457 1.017 6V5C1.017 3.89543 1.91243 3 3.017 3H6.017C8.22614 3 10.017 4.79086 10.017 7V15C10.017 18.3137 7.33072 21 4.017 21H1.017Z"/></svg></div><p class="text-sm text-gray-700 font-medium leading-relaxed italic line-clamp-3">${escapeHtml(data.notes)}</p></div>` : ''}
+          <div class="h-px bg-gray-50 mb-4"></div>
+          <div class="flex items-center justify-between mb-3 px-1">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${getBgClass(statusKey)} font-bold text-xs shadow-sm"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.382-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg> ${escapeHtml(outcomeText)}</div>
+            <div class="flex items-center gap-1.5 text-gray-400"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg><span class="text-xs font-bold text-gray-500 uppercase tracking-tight">${escapeHtml(data.telecaller_name)}</span></div>
+          </div>
+          <div class="audio-container w-full pt-1"><div class="h-10 w-full bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200"><span class="text-xs text-gray-400 font-medium italic">Recording pending sync</span></div></div>`;
+        todayHeader.after(card);
+      }
+      updatePagination();
+    });
+  }
+  if (socket) {
+    socket.on('recording_ready', (data) => {
+    [document.getElementById(`log-${data.log_id}`), document.getElementById(`card-log-${data.log_id}`)].forEach(item => {
+       if (item) {
+         const container = item.querySelector('.audio-container');
+         if (container) {
+           container.innerHTML = `<audio controls src="${data.recording_url}" class="h-9 w-full outline-none bg-gray-50 rounded-lg"></audio>`;
+         }
+       }
+    });
   });
+
+  socket.on('presence_update', (data) => {
+    const containers = document.querySelectorAll(`[data-presence-id="${data.telecallerId}"]`);
+    containers.forEach(container => {
+      const dot = container.querySelector('.presence-dot');
+      const text = container.querySelector('.presence-text');
+      
+      if (data.isOnline) {
+        // Update larger scorecard indicator
+        if (container.classList.contains('px-2.5')) {
+          container.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-500 bg-green-50 text-green-600 border border-green-100';
+          if (dot) dot.className = 'presence-dot w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse';
+          if (text) text.innerText = 'Online';
+        } 
+        // Update smaller dropdown dot
+        else if (container.classList.contains('w-2')) {
+          container.className = 'w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]';
+        }
+      } else {
+        // Update larger scorecard indicator
+        if (container.classList.contains('px-2.5')) {
+          container.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-500 bg-gray-50 text-gray-400 border border-gray-100';
+          if (dot) dot.className = 'presence-dot w-1.5 h-1.5 rounded-full bg-gray-300';
+          if (text) text.innerText = 'Offline';
+        }
+        // Update smaller dropdown dot
+        else if (container.classList.contains('w-2')) {
+          container.className = 'w-2 h-2 rounded-full bg-gray-200';
+        }
+      }
+    });
+  });
+  }
+ 
+  async function confirmDeleteCampaign() {
+    const bodyData = Alpine.$data(document.body);
+    const fileName = bodyData.campaignToDelete;
+    const pendingCount = bodyData.pendingLeadsToDelete;
+    
+    if (!fileName) return;
+
+    try {
+      const response = await fetch('/owner/delete-campaign-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        bodyData.deleteModalOpen = false;
+        window.location.reload();
+      } else {
+        alert('Error: ' + (result.error || 'Failed to delete leads'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error. Please try again.');
+    }
+  }
+
+  // Telecaller status polling for performance table
+  function updateTelecallerStatuses(statuses) {
+    document.querySelectorAll('.tc-status-label[data-tc-name]').forEach(el => {
+      const name = el.getAttribute('data-tc-name');
+      const tc = statuses.find(s => s.name === name);
+      if (tc) {
+        const statusLabel = tc.status === 'on_call' ? 'On Call' : tc.status.charAt(0).toUpperCase() + tc.status.slice(1);
+        el.textContent = statusLabel;
+        el.className = `tc-status-label text-xs font-semibold ${tc.status === 'idle' ? 'text-green-600' : tc.status === 'on_call' ? 'text-red-500' : 'text-gray-400'}`;
+      } else {
+        el.textContent = 'Offline';
+        el.className = 'tc-status-label text-xs font-semibold text-gray-400';
+      }
+    });
+    document.querySelectorAll('.tc-last-seen[data-tc-name]').forEach(el => {
+      const name = el.getAttribute('data-tc-name');
+      const tc = statuses.find(s => s.name === name);
+      if (tc) {
+        el.textContent = tc.last_seen_human;
+        el.className = 'tc-last-seen text-xs font-medium text-gray-500';
+      } else {
+        el.textContent = '—';
+        el.className = 'tc-last-seen text-xs font-medium text-gray-300';
+      }
+    });
+  }
+
+  async function fetchTelecallerStatuses() {
+    try {
+      const resp = await fetch('/api/v1/telecaller/statuses');
+      const data = await resp.json();
+      if (data.telecallers) {
+        updateTelecallerStatuses(data.telecallers);
+      }
+    } catch (e) {
+      console.error('Failed to fetch telecaller statuses:', e);
+    }
+  }
+
+  setInterval(fetchTelecallerStatuses, 15000);
+  document.addEventListener('DOMContentLoaded', fetchTelecallerStatuses);
+  setTimeout(fetchTelecallerStatuses, 500);
 </script>
 
-<style>
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in-up {
-  animation: fadeInUp 0.4s ease-out forwards;
-}
-.hidden-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.hidden-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.hidden-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #CBD5E1;
-  border-radius: 20px;
-}
-.hidden-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #94A3B8;
-}
-</style>
+<!-- Campaign Delete Confirmation Modal -->
+<div x-show="deleteModalOpen" 
+     x-cloak
+     class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100">
+    
+    <div @click.away="deleteModalOpen = false" 
+         class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-gray-100"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+        
+        <div class="p-8 text-center">
+            <div class="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center text-red-500 mx-auto mb-6">
+                <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+            
+            <h3 class="text-2xl font-black text-gray-900 mb-3 tracking-tight">Confirm Deletion</h3>
+            <p class="text-sm text-gray-500 font-medium leading-relaxed px-4">
+                Are you sure you want to delete all <span class="text-red-600 font-bold" x-text="pendingLeadsToDelete"></span> pending leads from campaign <span class="text-gray-900 font-bold" x-text="'&quot;' + campaignToDelete + '&quot;'"></span>?
+            </p>
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-4">This action cannot be undone</p>
+        </div>
+
+        <div class="p-6 bg-gray-50/50 flex flex-col sm:flex-row gap-3">
+            <button @click="deleteModalOpen = false" 
+                    class="flex-1 px-6 py-4 rounded-2xl bg-white border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all">
+                Cancel
+            </button>
+            <button onclick="confirmDeleteCampaign()" 
+                    class="flex-1 px-6 py-4 rounded-2xl bg-primary text-sm font-bold text-white hover:bg-red-700 shadow-lg shadow-red-200 transition-all">
+                Delete Leads
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Lead Details Modal -->
+<div x-show="leadModalOpen" 
+     x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100">
+    
+    <div @click.away="leadModalOpen = false" 
+         style="background: #ffffff; border-radius: 24px; box-shadow: 0 50px 100px -20px rgba(0,0,0,0.3); width: 95%; max-width: 1100px; overflow: hidden; transform: translateZ(0); border: none;"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-[0.98] translate-y-4"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+        
+        <!-- Stable Header -->
+        <div style="padding: 32px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 48px; height: 48px; border-radius: 14px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #6366f1; font-weight: 800; font-size: 18px;" x-text="selectedLead ? selectedLead.name.charAt(0) : '?'"></div>
+                <div style="display: flex; flex-direction: column;">
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.2;" x-text="selectedLead ? selectedLead.name : 'Lead Details'"></h3>
+                    <p style="margin: 4px 0 0; font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;" x-text="selectedLead ? 'Record ID: ' + selectedLead.id.split('-')[0] : ''"></p>
+                </div>
+            </div>
+            <button @click="leadModalOpen = false" style="background: none; border: none; cursor: pointer; color: #cbd5e1; margin-left: auto;">
+                <svg style="width: 28px; height: 28px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Stable Body -->
+        <div style="padding: 32px; background: #f8fafc; max-height: 65vh; overflow-y: auto;">
+            <!-- Core Info Row: Dedicated Top Section -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;">
+                <div style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Contact Number</span>
+                    <span style="font-size: 18px; font-weight: 800; color: #0f172a;" x-text="selectedLead ? selectedLead.phone : '—'"></span>
+                </div>
+
+                <div style="background: white; padding: 20px; border-radius: 20px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Current Status</span>
+                    <div style="display: flex; align-items: center; gap: 8px;"
+                         x-data="{
+                            get color() {
+                                const colors = {
+                                    'PENDING': '#fbbf24',
+                                    'INTERESTED': '#10b981', 'ORDERED': '#059669', 'BOOKED': '#047857', 'BANK_PTP': '#10b981', 'FPTP': '#10b981', 'PTP': '#10b981',
+                                    'REJECTED': '#ef4444', 'CANCELLED': '#dc2626', 'CALL_DISCONNECT': '#ef4444', 'OUT_OF_SERVICE': '#dc2626', 'SWITCH_OFF': '#dc2626', 'INCOMING_NOT_AVAIABLE': '#dc2626', 'RTP': '#b91c1c',
+                                    'MISSED': '#94a3b8', 'BUSY': '#64748b', 'NOT_REACHABLE': '#94a3b8', 'RNR': '#94a3b8',
+                                    'CB_REQUEST': '#3b82f6', 'LEFT_MSG': '#60a5fa', 'REMIND_LATER': '#6366f1',
+                                    'PARTIAL_PAID': '#8b5cf6', 'ALREADY_PAID': '#7c3aed',
+                                    'DEATH': '#111827', 'LOST': '#6b7280'
+                                };
+                                return colors[displayStatus] || '#10b981';
+                            }
+                         }">
+                        <div style="width: 10px; height: 10px; border-radius: 50%;" :style="'background: ' + color"></div>
+                        <span style="font-size: 14px; font-weight: 800; color: #0f172a; text-transform: uppercase;" x-text="displayStatus.replace(/_/g, ' ')"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Insights: Forced 4-Column Grid -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; box-sizing: border-box;">
+                <template x-for="(value, key) in (selectedLead ? selectedLead.additional_data : {})" :key="key">
+                    <div style="background: white; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden;">
+                        <span style="font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" x-text="key"></span>
+                        <span style="font-size: 13px; font-weight: 700; color: #334155; word-break: break-word;" x-text="value"></span>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty State -->
+            <div x-show="selectedLead && (!selectedLead.additional_data || Object.keys(selectedLead.additional_data).length === 0)" 
+                 style="margin-top: 16px; padding: 40px; text-align: center; background: white; border-radius: 20px; border: 1px solid #f1f5f9;">
+                <p style="font-size: 11px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1px;">No additional data available</p>
+            </div>
+        </div>
+
+        <!-- Stable Footer -->
+        <div style="padding: 24px 32px; background: white; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; align-items: center;">
+            <button @click="leadModalOpen = false" 
+                    style="background: #ef4444; color: white; padding: 12px 32px; border-radius: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; border: none; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.02)'"
+                    onmouseout="this.style.transform='scale(1)'">
+                Close Details
+            </button>
+        </div>
+    </div>
+</div>
 
 <%- include('partials/footer') %>

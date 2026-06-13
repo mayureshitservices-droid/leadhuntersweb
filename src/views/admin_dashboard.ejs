@@ -574,8 +574,8 @@
               <label 
                 style="display: flex; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer; transition: background 0.2s;"
                 :style="selectedOwnerId === '' ? 'background: rgba(254, 242, 242, 0.5)' : 'background: transparent'"
-                onmouseover="this.style.backgroundColor='rgba(249, 250, 251, 1)'"
-                onmouseout="this.style.backgroundColor=selectedOwnerId === '' ? 'rgba(254, 242, 242, 0.5)' : 'transparent'">
+                @mouseover="this.style.backgroundColor='rgba(249, 250, 251, 1)'"
+                @mouseout="this.style.backgroundColor=selectedOwnerId === '' ? 'rgba(254, 242, 242, 0.5)' : 'transparent'">
                 <input type="radio" name="owner_select" value="" x-model="selectedOwnerId"
                   style="width: 18px; height: 18px; cursor: pointer; accent-color: #ef4444;">
                 <div style="margin-left: 16px;">
@@ -586,8 +586,8 @@
                 <label 
                   style="display: flex; align-items: center; padding: 12px; border-radius: 12px; cursor: pointer; transition: background 0.2s;"
                   :style="selectedOwnerId === '<%= bo.id %>' ? 'background: rgba(254, 242, 242, 0.5)' : 'background: transparent'"
-                  onmouseover="this.style.backgroundColor='rgba(249, 250, 251, 1)'"
-                  onmouseout="this.style.backgroundColor=selectedOwnerId === '<%= bo.id %>' ? 'rgba(254, 242, 242, 0.5)' : 'transparent'">
+                  @mouseover="this.style.backgroundColor='rgba(249, 250, 251, 1)'"
+                  @mouseout="this.style.backgroundColor=selectedOwnerId === '<%= bo.id %>' ? 'rgba(254, 242, 242, 0.5)' : 'transparent'">
                   <input type="radio" name="owner_select" value="<%= bo.id %>" x-model="selectedOwnerId"
                     style="width: 18px; height: 18px; cursor: pointer; accent-color: #ef4444;">
                   <div style="margin-left: 16px;">

@@ -24,12 +24,21 @@ const redisClient = createClient({
 });
 redisClient.connect().catch(console.error);
 
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+  throw new Error('SESSION_SECRET environment variable is required');
+}
+
+app.set('trust proxy', 1);
 app.use(session({
   store: new RedisStore({ client: redisClient, prefix: "leadhunters:" }),
-  secret: process.env.SESSION_SECRET || 'secret',
+  secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // Set to true if using HTTPS
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  }
 }));
 
 import webRoutes from './routes/web.routes.js';

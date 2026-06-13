@@ -50,7 +50,10 @@ export class WebController {
       };
 
       req.session.save((err) => {
-        if (err) throw err;
+        if (err) {
+          console.error('Session save error:', err);
+          return res.render('login', { error: 'Session error. Please retry.' });
+        }
         this.dashboardRedirect(req, res);
       });
     } catch (error) {
@@ -158,11 +161,15 @@ export class WebController {
     let perfEnd = new Date();
     
     if (req.query.perfStart) {
-      perfStart = new Date(req.query.perfStart as string);
+      const d = new Date(req.query.perfStart as string);
+      if (!isNaN(d.getTime())) perfStart = d;
     }
     if (req.query.perfEnd) {
-      perfEnd = new Date(req.query.perfEnd as string);
-      perfEnd.setHours(23, 59, 59, 999);
+      const d = new Date(req.query.perfEnd as string);
+      if (!isNaN(d.getTime())) {
+        perfEnd = d;
+        perfEnd.setHours(23, 59, 59, 999);
+      }
     }
 
     const callLogsPerformance = await prisma.callLog.findMany({
@@ -266,11 +273,16 @@ export class WebController {
 
       if (start || end) {
         dateFilter.created_at = {};
-        if (start) dateFilter.created_at.gte = new Date(start as string);
+        if (start) {
+          const d = new Date(start as string);
+          if (!isNaN(d.getTime())) dateFilter.created_at.gte = d;
+        }
         if (end) {
           const endDate = new Date(end as string);
-          endDate.setHours(23, 59, 59, 999);
-          dateFilter.created_at.lte = endDate;
+          if (!isNaN(endDate.getTime())) {
+            endDate.setHours(23, 59, 59, 999);
+            dateFilter.created_at.lte = endDate;
+          }
         }
       }
 
@@ -526,7 +538,7 @@ export class WebController {
           email,
           password_hash,
           phone,
-          payment_terms: parseInt(payment_terms, 10) || null,
+          payment_terms: payment_terms !== undefined && payment_terms !== '' ? parseInt(payment_terms, 10) : null,
           status: status || 'Active',
           role: 'BUSINESS_OWNER'
         }
@@ -556,7 +568,7 @@ export class WebController {
           name,
           email,
           phone,
-          payment_terms: parseInt(payment_terms, 10) || null
+          payment_terms: payment_terms !== undefined && payment_terms !== '' ? parseInt(payment_terms, 10) : null
         }
       });
 
@@ -603,8 +615,11 @@ export class WebController {
       });
 
       res.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting customer:', error);
+      if (error?.code === 'P2003') {
+        return res.status(400).json({ error: 'Cannot delete customer with existing leads or records.' });
+      }
       res.status(500).json({ error: 'Internal server error.' });
     }
   };

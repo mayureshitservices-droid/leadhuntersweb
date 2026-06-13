@@ -60,33 +60,31 @@ export class LeadController {
         return res.status(400).json({ error: 'campaign_name is required' });
       }
 
+      const telecallerId = req.user.id;
       const telecaller = await prisma.user.findUnique({
-        where: { id: req.user.id },
-        select: { owner_id: true }
+        where: { id: telecallerId },
+        select: { owner_id: true, owner: { select: { name: true } } }
       });
 
       if (!telecaller?.owner_id) {
         return res.status(400).json({ error: 'No business owner assigned' });
       }
 
-      // We need atomic operations:
-      // 1. Release currently assigned PENDING leads
-      await prisma.lead.updateMany({
-        where: {
-          telecaller_id: req.user.id,
-          status: 'PENDING'
-        },
-        data: {
-          telecaller_id: null
-        }
-      });
+      // Atomically release and claim leads in a transaction
+      const updatedLeads = await prisma.$transaction(async (tx) => {
+        await tx.lead.updateMany({
+          where: {
+            telecaller_id: telecallerId,
+            status: 'PENDING'
+          },
+          data: {
+            telecaller_id: null
+          }
+        });
 
-      // 2. Atomically assign up to 50 unassigned PENDING leads using Postgres FOR UPDATE SKIP LOCKED
-      // This is the industry-standard way to handle high-concurrency queues.
-      // It guarantees no two telecallers read the same rows, eliminating wasted queries.
-      const updatedLeads = await prisma.$queryRaw<any[]>`
+        return await tx.$queryRaw<any[]>`
         UPDATE "Lead"
-        SET telecaller_id = ${req.user.id}
+        SET telecaller_id = ${telecallerId}
         WHERE id IN (
           SELECT id FROM "Lead"
           WHERE business_owner_id = ${telecaller.owner_id}
@@ -99,10 +97,6 @@ export class LeadController {
         )
           RETURNING id, name, phone, status, business_owner_id, file_name, additional_data;
       `;
-
-      const owner = await prisma.user.findUnique({
-        where: { id: telecaller.owner_id },
-        select: { name: true }
       });
 
       const leads = updatedLeads.map(lead => ({
@@ -111,7 +105,7 @@ export class LeadController {
         phone: lead.phone,
         status: lead.status,
         business_owner_id: lead.business_owner_id,
-        business_owner_name: owner?.name || '',
+        business_owner_name: telecaller.owner?.name || '',
         campaign_name: lead.file_name || '',
         additional_data: (lead as any).additional_data
       }));

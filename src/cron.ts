@@ -8,7 +8,8 @@ cron.schedule('0 0 * * *', async () => {
     const result = await prisma.lead.updateMany({
       where: {
         status: 'PENDING',
-        telecaller_id: { not: null }
+        telecaller_id: { not: null },
+        updated_at: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
       },
       data: {
         telecaller_id: null

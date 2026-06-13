@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
 import { prisma } from '../config/db.js';
-import { io } from '../index.js';
+import { getIo } from '../lib/io.js';
 import multer from 'multer';
 import fs from 'fs';
 import * as os_sdk from 'oci-objectstorage';
@@ -125,18 +125,20 @@ export class SyncController {
         console.log(`[SyncCallLog] Created NEW log id=${callLog.id}`);
       }
 
-      // Emit to dashboard via Socket.IO using telecaller's owner_id
+      // Fetch telecaller details for name/alias and owner_id
       const telecaller = await prisma.user.findUnique({
         where: { id: telecaller_id },
-        select: { owner_id: true }
+        select: { owner_id: true, name: true, device_alias: true }
       });
 
+      const telecallerDisplayName = telecaller?.device_alias || telecaller?.name || req.user!.name;
+
       if (telecaller?.owner_id) {
-        io.to(`dashboard_${telecaller.owner_id}`).emit('new_call_log', {
+        getIo().to(`dashboard_${telecaller.owner_id}`).emit('new_call_log', {
           log_id: callLog.id,
           lead_name: lead.name,
           lead_phone: lead.phone,
-          telecaller_name: req.user!.name,
+          telecaller_name: telecallerDisplayName,
           duration: duration_seconds,
           call_status: call_status || 'UNKNOWN',
           outcome: outcome || '—',
@@ -146,12 +148,22 @@ export class SyncController {
         });
       }
 
+      const formatDate = (ms: number | string | bigint | null | undefined): string | null => {
+        if (ms === null || ms === undefined) return null;
+        const num = Number(ms);
+        if (isNaN(num)) return null;
+        const d = new Date(num);
+        if (d.toString() === 'Invalid Date') return null;
+        return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
+      };
+
       notifySheets({
         campaign_name: lead.file_name || '',
         lead_name: lead.name,
         phone: lead.phone,
-        telecaller_name: req.user!.name,
-        reminder_timestamp: next_reminder_time || null,
+        telecaller_name: telecallerDisplayName,
+        created_at: formatDate(callLog.created_at.getTime()),
+        reminder_timestamp: formatDate(next_reminder_time),
         outcome: outcome || '',
         closing_format: closing_format || null,
         ptp_amount: ptp_amount || null
@@ -216,7 +228,7 @@ export class SyncController {
         });
 
         // Notify owner dashboard about the new recording
-        io.to(`dashboard_${updatedLog.lead.business_owner_id}`).emit('recording_ready', {
+        getIo().to(`dashboard_${updatedLog.lead.business_owner_id}`).emit('recording_ready', {
           log_id: logId,
           recording_url: recordingUrl
         });

@@ -49,25 +49,36 @@ export class TelecallerController {
 
   getStatuses = async (_req: AuthRequest, res: Response) => {
     try {
-      const rows = await prisma.telecallerStatus.findMany({
-        orderBy: { telecaller_name: 'asc' }
-      });
+      const [users, statusRows] = await Promise.all([
+        prisma.user.findMany({
+          where: { role: 'TELECALLER' },
+          select: { name: true, last_seen: true }
+        }),
+        prisma.telecallerStatus.findMany()
+      ]);
 
       const now = Date.now();
       const fiveMinMs = 5 * 60 * 1000;
+      const statusMap = new Map(statusRows.map(r => [r.telecaller_name, r]));
 
-      const telecallers = rows.map(row => {
-        const lastSeenAt = Number(row.last_seen_at);
-        const diffMs = now - lastSeenAt;
+      const telecallers = users.map(user => {
+        const userLastSeen = user.last_seen ? user.last_seen.getTime() : 0;
+        const diffMs = now - userLastSeen;
         const isOnline = diffMs < fiveMinMs;
+
+        const statusRow = statusMap.get(user.name);
+        const statusFromRow = statusRow?.status;
 
         let derivedStatus: string;
         if (!isOnline) {
           derivedStatus = 'offline';
+        } else if (statusFromRow === 'on_call') {
+          derivedStatus = 'on_call';
         } else {
-          derivedStatus = row.status;
+          derivedStatus = 'idle';
         }
 
+        const lastSeenAt = userLastSeen;
         const seconds = Math.floor(diffMs / 1000);
         let lastSeenHuman: string;
         if (seconds < 60) {
@@ -79,7 +90,7 @@ export class TelecallerController {
         }
 
         return {
-          name: row.telecaller_name,
+          name: user.name,
           status: derivedStatus,
           last_seen_at: lastSeenAt,
           last_seen_human: lastSeenHuman,

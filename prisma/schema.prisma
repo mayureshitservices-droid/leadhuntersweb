@@ -92,7 +92,7 @@ model Lead {
   file_name         String?    @default("Legacy Upload")
   additional_data   Json?
   created_at        DateTime   @default(now())
-  updated_at        DateTime   @updatedAt @default(now())
+  updated_at        DateTime   @updatedAt
 
   // Relations
   business_owner User      @relation("OwnerLeads", fields: [business_owner_id], references: [id], onDelete: Cascade)
@@ -100,6 +100,10 @@ model Lead {
   call_logs      CallLog[]
 
   @@unique([business_owner_id, phone])
+  @@index([business_owner_id])
+  @@index([telecaller_id])
+  @@index([status])
+  @@index([business_owner_id, status])
 }
 
 model TelecallerStatus {
@@ -115,6 +119,9 @@ model DeletedLead {
   lead_id           String
   business_owner_id String
   deleted_at        DateTime @default(now())
+
+  @@index([lead_id])
+  @@index([business_owner_id])
 }
 
 model CallLog {
@@ -129,7 +136,7 @@ model CallLog {
   next_reminder_time BigInt?
   closing_format   String?
   ptp_amount       Float?
-  local_log_id     String?      // ID from Android local DB
+  local_log_id     String?
   created_at       DateTime     @default(now())
 
   // Relations
@@ -137,4 +144,6 @@ model CallLog {
   telecaller User @relation(fields: [telecaller_id], references: [id], onDelete: Cascade)
 
   @@unique([telecaller_id, local_log_id])
+  @@index([lead_id])
+  @@index([telecaller_id])
 }

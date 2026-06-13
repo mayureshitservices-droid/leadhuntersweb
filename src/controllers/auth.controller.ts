@@ -3,8 +3,12 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/db.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
+import { getIo } from '../lib/io.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 export class AuthController {
   
@@ -96,9 +100,6 @@ export class AuthController {
           data: { last_seen: new Date() }
        });
 
-       // Dynamically import io to avoid circular dependency
-       const { io } = await import('../index.js');
-       
        let deletedLeads: string[] = [];
        
        if (ownerId) {
@@ -111,7 +112,7 @@ export class AuthController {
          });
          deletedLeads = recentlyDeleted.map(d => d.lead_id);
 
-         io.to(`dashboard_${ownerId}`).emit('presence_update', {
+         getIo().to(`dashboard_${ownerId}`).emit('presence_update', {
             telecallerId: id,
             isOnline: true,
             lastSeen: new Date()

@@ -3,29 +3,32 @@ import { Server } from 'socket.io';
 import app from './app.js';
 import 'dotenv/config';
 import { prisma } from './config/db.js';
+import './cron.js';
+import { setIo } from './lib/io.js';
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 export const io = new Server(server, {
     cors: {
-        origin: '*', // For development
+        origin: process.env.CORS_ORIGIN || '*',
     }
 });
-async function notifyOwners(telecallerId, isOnline) {
+setIo(io);
+async function notifyOwner(telecallerId, isOnline) {
     try {
-        const assignments = await prisma.telecallerAssignment.findMany({
-            where: { telecaller_id: telecallerId },
-            select: { business_owner_id: true }
+        const telecaller = await prisma.user.findUnique({
+            where: { id: telecallerId },
+            select: { owner_id: true }
         });
-        assignments.forEach(a => {
-            io.to(`dashboard_${a.business_owner_id}`).emit('presence_update', {
+        if (telecaller?.owner_id) {
+            io.to(`dashboard_${telecaller.owner_id}`).emit('presence_update', {
                 telecallerId,
                 isOnline,
                 lastSeen: new Date()
             });
-        });
+        }
     }
     catch (error) {
-        console.error('Error notifying owners of presence update:', error);
+        console.error('Error notifying owner of presence update:', error);
     }
 }
 io.on('connection', (socket) => {
@@ -43,7 +46,7 @@ io.on('connection', (socket) => {
                 where: { id: telecallerId },
                 data: { last_seen: new Date() }
             });
-            await notifyOwners(telecallerId, true);
+            await notifyOwner(telecallerId, true);
         }
         catch (err) {
             console.error('Error registering presence:', err);
@@ -57,7 +60,7 @@ io.on('connection', (socket) => {
                     where: { id: telecallerId },
                     data: { last_seen: new Date() }
                 });
-                await notifyOwners(telecallerId, false);
+                await notifyOwner(telecallerId, false);
             }
             catch (err) {
                 console.error('Error on presence disconnect:', err);
@@ -65,6 +68,13 @@ io.on('connection', (socket) => {
         }
         console.log(`Socket disconnected: ${socket.id}`);
     });
+});
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. The server may already be running.`);
+        process.exit(1);
+    }
+    console.error('Server error:', err);
 });
 server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

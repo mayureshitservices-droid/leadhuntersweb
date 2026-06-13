@@ -41,8 +41,10 @@ export class WebController {
                 name: user.name
             };
             req.session.save((err) => {
-                if (err)
-                    throw err;
+                if (err) {
+                    console.error('Session save error:', err);
+                    return res.render('login', { error: 'Session error. Please retry.' });
+                }
                 this.dashboardRedirect(req, res);
             });
         }
@@ -106,26 +108,15 @@ export class WebController {
                 errorMsg = 'Failed to upload leads. Please check your data format.';
             }
         }
-        let assignMsg = null;
-        let assignError = null;
-        if (req.query.assign === 'success') {
-            const count = req.query.count || '0';
-            assignMsg = `Successfully assigned ${count} lead(s) to the selected telecaller!`;
-        }
-        if (req.query.assign === 'error') {
-            assignError = req.query.msg === 'no_telecaller'
-                ? 'Please select a telecaller before assigning.'
-                : 'Failed to assign leads. Please try again.';
-        }
         // Fetch telecallers assigned to this business owner
-        const assignments = await prisma.telecallerAssignment.findMany({
-            where: { business_owner_id: ownerId },
-            include: { telecaller: { select: { id: true, name: true, device_alias: true, last_seen: true } } }
+        const telecallers = await prisma.user.findMany({
+            where: { owner_id: ownerId, role: 'TELECALLER' },
+            select: { id: true, name: true, device_alias: true, last_seen: true }
         });
-        const telecallers = assignments.map(a => ({
-            id: a.telecaller.id,
-            name: a.telecaller.device_alias || a.telecaller.name,
-            last_seen: a.telecaller.last_seen
+        const telecallerList = telecallers.map(tc => ({
+            id: tc.id,
+            name: tc.device_alias || tc.name,
+            last_seen: tc.last_seen
         }));
         const leads = await prisma.lead.findMany({
             where: { business_owner_id: ownerId },
@@ -151,33 +142,27 @@ export class WebController {
         let perfStart = new Date(now.getFullYear(), now.getMonth(), 1);
         let perfEnd = new Date();
         if (req.query.perfStart) {
-            perfStart = new Date(req.query.perfStart);
+            const d = new Date(req.query.perfStart);
+            if (!isNaN(d.getTime()))
+                perfStart = d;
         }
         if (req.query.perfEnd) {
-            perfEnd = new Date(req.query.perfEnd);
-            perfEnd.setHours(23, 59, 59, 999);
+            const d = new Date(req.query.perfEnd);
+            if (!isNaN(d.getTime())) {
+                perfEnd = d;
+                perfEnd.setHours(23, 59, 59, 999);
+            }
         }
         const callLogsPerformance = await prisma.callLog.findMany({
             where: { lead: { business_owner_id: ownerId }, created_at: { gte: perfStart, lte: perfEnd } },
             select: { telecaller_id: true, outcome: true, call_status: true, duration_seconds: true, created_at: true }
         });
-        const leadsAssignedCounts = await prisma.lead.groupBy({
-            by: ['telecaller_id'],
-            where: { business_owner_id: ownerId, telecaller_id: { in: telecallers.map(tc => tc.id) } },
-            _count: { _all: true }
-        });
-        const assignedMap = {};
-        leadsAssignedCounts.forEach(l => {
-            if (l.telecaller_id)
-                assignedMap[l.telecaller_id] = l._count._all;
-        });
         const perf = {};
-        telecallers.forEach(tc => {
+        telecallerList.forEach(tc => {
             perf[tc.id] = {
                 id: tc.id,
                 name: tc.name,
                 last_seen: tc.last_seen,
-                leadsAssigned: assignedMap[tc.id] || 0,
                 total: 0,
                 answered: 0,
                 missed: 0,
@@ -214,7 +199,7 @@ export class WebController {
             select: {
                 file_name: true,
                 status: true,
-                telecaller: { select: { name: true, device_alias: true } }
+                telecaller_id: true
             }
         });
         const campaignMap = {};
@@ -225,37 +210,31 @@ export class WebController {
                     name,
                     total: 0,
                     processed: 0,
-                    pending: 0,
-                    telecallers: new Set()
+                    available: 0,
+                    inProgress: 0
                 };
             }
             campaignMap[name].total++;
             if (lead.status === 'PENDING') {
-                campaignMap[name].pending++;
+                if (!lead.telecaller_id) {
+                    campaignMap[name].available++;
+                }
+                else {
+                    campaignMap[name].inProgress++;
+                }
             }
             else {
                 campaignMap[name].processed++;
             }
-            if (lead.telecaller) {
-                campaignMap[name].telecallers.add(lead.telecaller.device_alias || lead.telecaller.name);
-            }
-            else {
-                campaignMap[name].telecallers.add('Unassigned');
-            }
         });
-        const campaigns = Object.values(campaignMap).map(c => ({
-            ...c,
-            telecallerNames: Array.from(c.telecallers).join(', ')
-        }));
+        const campaigns = Object.values(campaignMap);
         res.render('owner_dashboard', {
             user,
             stats,
             uploadMsg,
             errorMsg,
-            assignMsg,
-            assignError,
             leads,
-            telecallers,
+            telecallers: telecallerList,
             callLogs,
             telecallerPerformance,
             campaigns,
@@ -272,12 +251,17 @@ export class WebController {
             };
             if (start || end) {
                 dateFilter.created_at = {};
-                if (start)
-                    dateFilter.created_at.gte = new Date(start);
+                if (start) {
+                    const d = new Date(start);
+                    if (!isNaN(d.getTime()))
+                        dateFilter.created_at.gte = d;
+                }
                 if (end) {
                     const endDate = new Date(end);
-                    endDate.setHours(23, 59, 59, 999);
-                    dateFilter.created_at.lte = endDate;
+                    if (!isNaN(endDate.getTime())) {
+                        endDate.setHours(23, 59, 59, 999);
+                        dateFilter.created_at.lte = endDate;
+                    }
                 }
             }
             const logs = await prisma.callLog.findMany({
@@ -339,6 +323,7 @@ export class WebController {
         const ownerId = req.session.user.id;
         const filePath = req.file.path;
         const fileName = req.file.originalname;
+        const campaignName = req.body.campaign_name?.trim() || fileName;
         const fileExt = path.extname(fileName).toLowerCase();
         try {
             let results = [];
@@ -394,12 +379,12 @@ export class WebController {
                         name: lead.name,
                         phone: lead.phone,
                         status: 'PENDING',
-                        file_name: fileName,
+                        file_name: campaignName,
                         additional_data: lead.additional_data
                     },
                     update: {
                         status: 'PENDING',
-                        file_name: fileName,
+                        file_name: campaignName,
                         name: lead.name,
                         additional_data: lead.additional_data
                     }
@@ -464,30 +449,6 @@ export class WebController {
             additional_data: safeAdditionalData
         };
     };
-    postAssignLeads = async (req, res) => {
-        try {
-            const ownerId = req.session.user.id;
-            const { telecaller_id } = req.body;
-            if (!telecaller_id || telecaller_id.trim() === '') {
-                return res.redirect('/owner?tab=upload&assign=error&msg=no_telecaller');
-            }
-            // Assign all unassigned (telecaller_id = null) leads belonging to this owner
-            const result = await prisma.lead.updateMany({
-                where: {
-                    business_owner_id: ownerId,
-                    telecaller_id: null
-                },
-                data: {
-                    telecaller_id: telecaller_id
-                }
-            });
-            return res.redirect(`/owner?tab=upload&assign=success&count=${result.count}`);
-        }
-        catch (err) {
-            console.error('Assign Error:', err);
-            return res.redirect('/owner?tab=upload&assign=error');
-        }
-    };
     updateDeviceAlias = async (req, res) => {
         try {
             const { telecallerId, deviceAlias } = req.body;
@@ -518,7 +479,7 @@ export class WebController {
                     email,
                     password_hash,
                     phone,
-                    payment_terms: parseInt(payment_terms, 10) || null,
+                    payment_terms: payment_terms !== undefined && payment_terms !== '' ? parseInt(payment_terms, 10) : null,
                     status: status || 'Active',
                     role: 'BUSINESS_OWNER'
                 }
@@ -545,7 +506,7 @@ export class WebController {
                     name,
                     email,
                     phone,
-                    payment_terms: parseInt(payment_terms, 10) || null
+                    payment_terms: payment_terms !== undefined && payment_terms !== '' ? parseInt(payment_terms, 10) : null
                 }
             });
             res.json({ success: true });
@@ -588,46 +549,41 @@ export class WebController {
         }
         catch (error) {
             console.error('Error deleting customer:', error);
+            if (error?.code === 'P2003') {
+                return res.status(400).json({ error: 'Cannot delete customer with existing leads or records.' });
+            }
             res.status(500).json({ error: 'Internal server error.' });
         }
     };
     getTelecallerAssignments = async (req, res) => {
         try {
             const id = req.params.id;
-            const assignments = await prisma.telecallerAssignment.findMany({
-                where: { telecaller_id: id },
-                select: { business_owner_id: true }
+            const user = await prisma.user.findUnique({
+                where: { id },
+                select: { owner_id: true }
             });
-            res.json({ ids: assignments.map(a => a.business_owner_id) });
+            res.json({ owner_id: user?.owner_id || null });
         }
         catch (error) {
             console.error('Error fetching assignments:', error);
             res.status(500).json({ error: 'Internal server error.' });
         }
     };
-    updateTelecallerAssignments = async (req, res) => {
+    setTelecallerOwner = async (req, res) => {
         try {
             const telecallerId = req.body.telecallerId;
-            const businessOwnerIds = req.body.businessOwnerIds;
-            if (!telecallerId || !Array.isArray(businessOwnerIds)) {
-                return res.status(400).json({ error: 'Telecaller ID and Business Owner IDs array are required.' });
+            const businessOwnerId = req.body.businessOwnerId;
+            if (!telecallerId || !businessOwnerId) {
+                return res.status(400).json({ error: 'Telecaller ID and Business Owner ID are required.' });
             }
-            // Sync assignments: Delete old and create new in a transaction
-            await prisma.$transaction([
-                prisma.telecallerAssignment.deleteMany({
-                    where: { telecaller_id: telecallerId }
-                }),
-                prisma.telecallerAssignment.createMany({
-                    data: businessOwnerIds.map(boId => ({
-                        telecaller_id: telecallerId,
-                        business_owner_id: boId
-                    }))
-                })
-            ]);
+            await prisma.user.update({
+                where: { id: telecallerId },
+                data: { owner_id: businessOwnerId }
+            });
             res.json({ success: true });
         }
         catch (error) {
-            console.error('Error updating assignments:', error);
+            console.error('Error setting telecaller owner:', error);
             res.status(500).json({ error: 'Internal server error.' });
         }
     };

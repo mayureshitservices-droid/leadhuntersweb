@@ -1,0 +1,50 @@
+Backend Change Request: Accept closing_format and ptp_amount in Call Log Sync
+Overview
+The Android app now sends two additional fields when a PTP-type outcome (Bank PTP, FPTP, PTP, RTP) is submitted. The backend must accept and persist these fields in the CallLog table and forward them in relevant emissions.
+New Fields
+Field
+closing_format
+ptp_amount
+Files to Modify
+1. prisma/schema.prisma — CallLog model
+Add after next_reminder_time (line 129):
+closing_format  String?
+ptp_amount      Float?
+Then create a migration:
+npx prisma migrate dev --name add_closing_format_and_ptp_amount
+2. src/controllers/sync.controller.ts — syncCallLog method
+a) Destructure (line 52):
+const { local_log_id, lead_id, duration_seconds, call_status, outcome, notes, next_reminder_time, closing_format, ptp_amount } = req.body;
+b) UPDATE block (line 95-105) — add in the data object:
+closing_format: closing_format || existingLog.closing_format,
+ptp_amount: ptp_amount !== undefined ? parseFloat(ptp_amount) : existingLog.ptp_amount,
+c) CREATE block (line 109-120) — add in the data object:
+closing_format: closing_format || null,
+ptp_amount: ptp_amount !== undefined ? parseFloat(ptp_amount) : null,
+d) Socket.IO emit (line 131-140) — add to the event payload:
+closing_format: closing_format || null,
+ptp_amount: ptp_amount || null,
+e) notifySheets call (line 143-150) — add to the data object: (optional, depends on whether sheets need these fields)
+closing_format: closing_format || null,
+ptp_amount: ptp_amount || null,
+Incoming JSON Payload (from Android)
+{
+  "local_log_id": "123_1718000000000",
+  "lead_id": "uuid-lead-id",
+  "duration_seconds": 120,
+  "call_status": "ANSWERED",
+  "outcome": "Bank PTP",
+  "notes": "Customer agreed to pay",
+  "next_reminder_time": 1718100000000,
+  "closing_format": "EMI",
+  "ptp_amount": 5000.0
+}
+Validation Notes
+- closing_format will only be present for PTP-type outcomes, but the backend should accept it unconditionally (nullable).
+- ptp_amount should be parsed as a float. If absent or unparseable, store null.
+- No rejection is needed if these fields are missing — they are optional additions.
+- The existing outcome → Lead.status update logic is unchanged.
+Testing
+1. Send a POST to /api/v1/sync/call-log with a PTP outcome including closing_format and ptp_amount — verify they persist in the call_logs table.
+2. Send without the new fields — verify existing behavior is unaffected.
+3. Send with ptp_amount: 0 — verify it stores 0.0 (validation is on the Android side; backend accepts what it receives).

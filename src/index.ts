@@ -4,6 +4,7 @@ import app from './app.js';
 import 'dotenv/config';
 import { prisma } from './config/db.js';
 import './cron.js';
+import { setIo } from './lib/io.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -11,9 +12,10 @@ const server = http.createServer(app);
 
 export const io = new Server(server, {
   cors: {
-    origin: '*', // For development
+    origin: process.env.CORS_ORIGIN || '*',
   }
 });
+setIo(io);
 
 async function notifyOwner(telecallerId: string, isOnline: boolean) {
   try {

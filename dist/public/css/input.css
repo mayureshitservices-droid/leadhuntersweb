@@ -1,5 +1,6 @@
 @import "tailwindcss";
-
+@source "../../views";
+@source "../../public";
 @theme {
   --color-primary: #E53935;
   --color-container: #FFEBEE;
@@ -21,6 +22,43 @@
   }
 }
 
+[x-cloak] {
+  display: none !important;
+}
+
 .btn-primary {
-  @apply bg-primary text-white font-medium py-2 px-4 rounded-lg shadow-md hover:-translate-y-0.5 transition-all focus:ring-4 focus:ring-container outline-none;
+  @apply bg-primary text-white font-bold py-2 px-6 rounded-xl shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all focus:ring-4 focus:ring-container outline-none text-sm;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.hidden-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.hidden-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #CBD5E1;
+  border-radius: 20px;
+}
+
+.date-header {
+  top: 0;
+  z-index: 10;
 }
