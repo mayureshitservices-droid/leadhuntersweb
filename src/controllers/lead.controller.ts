@@ -91,6 +91,11 @@ export class LeadController {
             AND file_name = ${campaign_name}
             AND status = 'PENDING'
             AND telecaller_id IS NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM "CallLog"
+              WHERE "CallLog".lead_id = "Lead".id
+                AND "CallLog".telecaller_id = ${telecallerId}
+            )
           ORDER BY created_at ASC
           LIMIT 50
           FOR UPDATE SKIP LOCKED

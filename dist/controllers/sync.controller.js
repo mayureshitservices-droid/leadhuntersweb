@@ -138,8 +138,10 @@ export class SyncController {
                     ptp_amount: ptp_amount !== undefined && ptp_amount !== null && ptp_amount !== '' ? parseFloat(ptp_amount) : null
                 });
             }
-            // Only send to sheets when outcome is meaningful (user filled the form)
-            if (outcome && outcome !== 'PENDING') {
+            // Only send to sheets for PTP outcomes (Bank PTP, FPTP, PTP, RTP)
+            const PTP_OUTCOMES = ['BANK_PTP', 'FPTP', 'PTP', 'RTP'];
+            const normalizedOutcome = outcome?.toUpperCase().replace(/ /g, '_') || '';
+            if (PTP_OUTCOMES.includes(normalizedOutcome)) {
                 const formatDate = (ms) => {
                     if (ms === null || ms === undefined)
                         return null;
